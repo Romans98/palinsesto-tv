@@ -40,7 +40,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6c. Backend simulato con versioni e "altri utenti" fittizi
   - [x] 6d. Lista dei programmi
   - [x] 6e. Modifica della durata
-  - [ ] 6f. Aggiunta di un programma
+  - [x] 6f. Aggiunta di un programma
   - [ ] 6g. Gestione dei conflitti di modifica concorrente
   - [ ] 6h. Feedback visivo quando i dati cambiano
 - [ ] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
@@ -163,6 +163,12 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 - **Scelta**: un form con titolo, durata e tipo.
   - **Flottante**: si inserisce dopo il programma selezionato.
   - **A orario fisso**: si indica l'orario di inizio e il programma si colloca da solo. Viene rifiutato se si sovrappone a un'altra ancora.
+- **Dettagli emersi in implementazione**:
+  - **senza nessuna riga selezionata**, il flottante va **in coda** al palinsesto (più naturale di "in cima", che lo farebbe partire alle 00:00);
+  - per il flottante la finestra mostra **dove finirà e a che ora inizierà** ("Dopo «Meteo», inizio previsto alle 08:34:50:12"). L'utente capisce l'effetto prima di confermare;
+  - dopo l'aggiunta il nuovo programma viene **selezionato e portato in vista**, quindi l'utente vede subito dove è finito, anche se è un'ancora molto più in basso;
+  - gli errori di compilazione (titolo vuoto) compaiono solo **dopo il primo tentativo** di conferma, non appena si apre la finestra. Gli errori del server (es. sovrapposizione tra ancore) compaiono in fondo alla finestra, che resta aperta con i dati inseriti;
+  - la finestra usa l'elemento **`<dialog>` nativo** del browser in modalità modale: sfondo oscurato, focus confinato nella finestra ed Esc gestiti dal browser, senza librerie.
 
 ---
 
@@ -388,6 +394,8 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | 6c. Backend simulato: `domain/commands.ts`, `data/` (repository, server simulato, utente simulato, identità, dati demo) | 76 test in totale. Utenti chiamati "Utente Test N" su richiesta. Il vincolo `erasableSyntaxOnly` del template vieta le *parameter properties* nei costruttori, quindi i campi sono dichiarati in modo esplicito |
 | 2026-11-20 | 6d + 6e. Prima UI: dependency injection, ViewModel, tabella in tema scuro, modifica della durata (D-013) | Il conflitto ha già una prima versione inline nell'editor; la versione definitiva (dialogo + avviso immediato) arriva al passo 6g |
 | 2026-11-20 | Revisione dopo la prima prova | Interfaccia rifatta in stile gestionale chiaro (D-012), timecode da sinistra verso destra e chiusura dell'editor alla perdita del focus (D-013). Corretto un bug: uscendo dal campo l'editor restava aperto ma non rispondeva più a Invio ed Esc |
+| 2026-11-20 | Autore e orario dell'ultima modifica, in due colonne separate | Nuovo campo `updatedAt`, assegnato dal server simulato (D-012) |
+| 2026-11-20 | 6f. Aggiunta di un programma: `AddProgramDialog` + `useAddProgramViewModel` | Riusa `applyAddProgram` (già testato) e il campo timecode. Dettagli in D-007 |
 
 ---
 

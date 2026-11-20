@@ -1,13 +1,22 @@
 import type { ScheduleIssues } from '../domain/schedule';
-import { AlertIcon, CheckIcon, InfoIcon, LockIcon } from './icons';
+import { AlertIcon, CheckIcon, InfoIcon, LockIcon, PlusIcon } from './icons';
 import styles from './ScheduleToolbar.module.css';
 
-export function ScheduleToolbar({ issues }: { issues: ScheduleIssues }) {
+type Props = {
+  issues: ScheduleIssues;
+  onAdd: () => void;
+};
+
+export function ScheduleToolbar({ issues, onAdd }: Props) {
   const clean = issues.overflows === 0 && issues.longAdBreaks === 0;
 
   return (
     <div className={styles.toolbar}>
       <div className={styles.issues} aria-live="polite">
+        <button type="button" className={styles.addButton} onClick={onAdd}>
+          <PlusIcon size={12} /> Aggiungi programma
+        </button>
+        <span className={styles.divider} />
         {clean && (
           <span className={`${styles.pill} ${styles.ok}`}>
             <CheckIcon size={12} /> Nessun problema

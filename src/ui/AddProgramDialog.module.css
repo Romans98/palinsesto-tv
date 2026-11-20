@@ -1,0 +1,165 @@
+.dialog {
+  width: 440px;
+  padding: 0;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 18%);
+}
+
+.dialog::backdrop {
+  background: rgb(15 23 42 / 35%);
+}
+
+.header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+/* Il campo timecode ha un margine negativo pensato per la tabella */
+.field input:not([type='radio']),
+.startField input {
+  margin-left: 0;
+}
+
+.label {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.textInput {
+  box-sizing: border-box;
+  height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  outline: none;
+}
+
+.textInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.invalid,
+.invalid:focus {
+  border-color: var(--danger);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.option:has(input:checked) {
+  background: var(--surface-selected);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.option input {
+  margin: 2px 0 0;
+}
+
+.optionTitle {
+  display: block;
+  font-weight: 600;
+}
+
+.optionHint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.startField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 30px;
+}
+
+.submitError {
+  padding: 8px 10px;
+  margin: 0;
+  font-size: 12px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-radius: 3px;
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 16px;
+  background: var(--surface-muted);
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0 0 6px 6px;
+}
+
+.primary,
+.secondary {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primary {
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.secondary {
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

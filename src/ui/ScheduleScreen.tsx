@@ -1,4 +1,5 @@
 import { useScheduleViewModel } from '../hooks/useScheduleViewModel';
+import { AddProgramDialog } from './AddProgramDialog';
 import { ScheduleHeader } from './ScheduleHeader';
 import styles from './ScheduleScreen.module.css';
 import { ScheduleTable } from './ScheduleTable';
@@ -11,7 +12,7 @@ export function ScheduleScreen() {
     <div className={styles.screen}>
       <ScheduleHeader currentUser={vm.currentUser} onResetDemo={vm.resetDemo} />
       <main className={styles.content}>
-        <ScheduleToolbar issues={vm.issues} />
+        <ScheduleToolbar issues={vm.issues} onAdd={vm.startAdding} />
         <div className={styles.grid}>
           <ScheduleTable
             rows={vm.rows}
@@ -23,6 +24,7 @@ export function ScheduleScreen() {
           />
         </div>
       </main>
+      {vm.isAdding && <AddProgramDialog insertAfter={vm.insertAfter} onDone={vm.finishAdding} />}
     </div>
   );
 }

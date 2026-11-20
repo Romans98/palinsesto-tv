@@ -24,6 +24,7 @@ type Props = {
   onBlur?: () => void;
   invalid?: boolean;
   disabled?: boolean;
+  autoFocus?: boolean;
   label: string;
 };
 
@@ -32,7 +33,17 @@ type Props = {
  * Le cifre si scrivono da sinistra verso destra sovrascrivendo quella evidenziata; i `:` vengono saltati.
  * Frecce sinistra/destra spostano il cursore, Backspace torna indietro di una cifra.
  */
-export function TimecodeInput({ value, onChange, onEnter, onEscape, onBlur, invalid, disabled, label }: Props) {
+export function TimecodeInput({
+  value,
+  onChange,
+  onEnter,
+  onEscape,
+  onBlur,
+  invalid,
+  disabled,
+  autoFocus = true,
+  label,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursor, setCursor] = useState(0);
 
@@ -112,7 +123,7 @@ export function TimecodeInput({ value, onChange, onEnter, onEscape, onBlur, inva
       aria-label={label}
       aria-invalid={invalid}
       inputMode="numeric"
-      autoFocus
+      autoFocus={autoFocus}
       spellCheck={false}
     />
   );

@@ -57,6 +57,13 @@ export const ResetIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const PlusIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M8 3v10" />
+    <path d="M3 8h10" />
+  </Icon>
+);
+
 export const UserIcon = (props: IconProps) => (
   <Icon {...props}>
     <circle cx="8" cy="5.5" r="2.5" />

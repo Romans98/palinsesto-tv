@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { OverflowTarget, ProgramRow as ProgramRowData } from '../domain/schedule';
 import { formatTimecode } from '../domain/timecode';
 import { DurationEditor } from './DurationEditor';
@@ -20,6 +21,12 @@ const overflowTargetLabel = (target: OverflowTarget) =>
 export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditing, onStopEditing }: Props) {
   const { program, overflow } = row;
   const anchor = program.fixedStartFrames !== null;
+  const rowRef = useRef<HTMLTableRowElement>(null);
+
+  // Una riga selezionata (es. un programma appena aggiunto) deve essere visibile
+  useEffect(() => {
+    if (isSelected) rowRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [isSelected]);
 
   const classes = [
     styles.row,
@@ -29,7 +36,7 @@ export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditin
   ].join(' ');
 
   return (
-    <tr className={classes} onClick={onSelect} aria-selected={isSelected}>
+    <tr ref={rowRef} className={classes} onClick={onSelect} aria-selected={isSelected}>
       <td className={`${styles.time} ${anchor ? styles.fixedTime : ''}`}>
         <span className={styles.timeContent}>
           <span className={styles.lockSlot} title={anchor ? 'Orario fisso' : undefined}>
