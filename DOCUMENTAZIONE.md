@@ -35,7 +35,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - [x] **4. UI**: riferimenti, wireframe, albero dei componenti
 - [ ] **5. GitHub**: repository e primo push
 - [ ] **6. Sviluppo incrementale**, un commit per ogni passo:
-  - [ ] 6a. Timecode: parse, format e aritmetica, con test
+  - [x] 6a. Timecode: parse, format e aritmetica, con test
   - [ ] 6b. Motore di ricalcolo del palinsesto, con test
   - [ ] 6c. Backend simulato con versioni e "altri utenti" fittizi
   - [ ] 6d. Lista dei programmi
@@ -346,12 +346,13 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | UI D-011, D-012 | Tema scuro, avviso immediato + dialogo di conflitto. Barra temporale rimandata |
 | 2026-11-20 | Struttura del progetto: Vite (template `react-ts`), React 19, TypeScript con `strict` esplicito, Vitest, oxlint, `netlify.toml`, `git init` | Rimossi i contenuti demo del template. Build, lint e test verificati |
 | 2026-11-20 | Il progetto è stato spostato nella sottocartella `palinsesto-tv/` | I file privati (la traccia) restano fuori dal repository invece di essere solo ignorati |
+| 2026-11-20 | 6a. Timecode (`src/domain/timecode.ts`) con 24 test | Frame interi; `parseTimecode` controlla solo il formato, `validateDuration` applica i limiti di dominio (D-005). Gli errori sono valori di ritorno (`Result`, come in Swift), non eccezioni: un input sbagliato dell'utente è un caso previsto, non un'anomalia |
 
 ---
 
 ## 8. Cosa ho lasciato per strada
 
-_Da compilare durante lo sviluppo._
+- **Tipo "marcato" per i frame** (branded type, es. `number & { __brand: 'Frames' }`): impedirebbe a compile time di sommare per errore frame e secondi. Per ora `Frames` è un semplice alias di `number`: costa meno e si legge meglio, ma la protezione è solo documentale.
 
 ---
 
