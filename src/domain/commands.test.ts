@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAddProgram, applyUpdateDuration } from './commands';
+import { applyAddProgram, applyUpdateDuration as applyUpdate } from './commands';
 import { computeSchedule } from './schedule';
 import { FRAMES_PER_DAY, FRAMES_PER_MINUTE, fromParts, type Frames } from './timecode';
 import type { Program } from './types';
@@ -14,6 +14,7 @@ const floating = (id: string, duration: Frames, version = 1): Program => ({
   fixedStartFrames: null,
   version,
   updatedBy: 'seed',
+  updatedAt: 0,
 });
 const anchor = (id: string, start: Frames, duration: Frames): Program => ({
   ...floating(id, duration),
@@ -21,6 +22,10 @@ const anchor = (id: string, start: Frames, duration: Frames): Program => ({
 });
 
 const ids = (programs: Program[]) => programs.map((p) => p.id);
+
+const NOW = Date.UTC(2026, 10, 20, 14, 30);
+const applyUpdateDuration = (programs: Program[], command: Parameters<typeof applyUpdate>[1]) =>
+  applyUpdate(programs, command, NOW);
 
 describe('applyUpdateDuration', () => {
   const programs = [floating('a', min(30), 3), floating('b', min(45))];
@@ -33,7 +38,7 @@ describe('applyUpdateDuration', () => {
       user: 'Utente Test 1',
     });
     expect(result.status).toBe('ok');
-    expect(next[0]).toMatchObject({ durationFrames: min(32), version: 4, updatedBy: 'Utente Test 1' });
+    expect(next[0]).toMatchObject({ durationFrames: min(32), version: 4, updatedBy: 'Utente Test 1', updatedAt: NOW });
   });
 
   it('non modifica la lista originale', () => {
@@ -98,11 +103,11 @@ describe('applyAddProgram', () => {
     floating('film', min(90)),
   ];
   const add = (placement: Parameters<typeof applyAddProgram>[1]['placement'], duration = min(10), title = 'Nuovo') =>
-    applyAddProgram(programs, { title, durationFrames: duration, placement, user: 'Utente Test 1' }, 'new');
+    applyAddProgram(programs, { title, durationFrames: duration, placement, user: 'Utente Test 1' }, 'new', NOW);
 
   it('flottante dopo un programma', () => {
     const { programs: next, result } = add({ kind: 'after', programId: 'show' });
-    expect(result).toMatchObject({ status: 'ok', program: { id: 'new', fixedStartFrames: null, version: 1 } });
+    expect(result).toMatchObject({ status: 'ok', program: { id: 'new', fixedStartFrames: null, version: 1, updatedAt: NOW } });
     expect(ids(next)).toEqual(['mattino', 'show', 'new', 'tg', 'film']);
   });
 

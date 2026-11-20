@@ -1,0 +1,177 @@
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.colTime {
+  width: 132px;
+}
+
+.colAuthor {
+  width: 140px;
+}
+
+.colUpdatedAt {
+  width: 120px;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-muted);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.table th + th,
+.row td + td {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.row td {
+  height: 34px;
+  padding: 0 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.row:hover td {
+  background: var(--surface-hover);
+}
+
+.selected td,
+.selected:hover td {
+  background: var(--surface-selected);
+}
+
+/* Orari */
+
+.time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.timeContent {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lockSlot {
+  display: inline-flex;
+  width: 12px;
+  color: var(--anchor);
+}
+
+/* Programmi a orario fisso */
+
+.anchor td:first-child {
+  box-shadow: inset 3px 0 0 var(--anchor);
+}
+
+.fixedTime {
+  font-weight: 600;
+}
+
+/* Durata modificabile */
+
+.durationButton {
+  padding: 3px 6px;
+  margin-left: -7px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: text;
+}
+
+.durationButton:hover,
+.durationButton:focus-visible {
+  background: var(--surface);
+  border-color: var(--border);
+  outline: none;
+}
+
+/* Titolo */
+
+.title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.titleText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Badge di stato */
+
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 4px;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 3px;
+}
+
+.badgeDanger {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.badgeWarning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+/* Sforamento */
+
+.overflow td {
+  background: #fff7f7;
+}
+
+.overflow td:first-child {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+/* Pubblicità */
+
+.adBreak td {
+  height: 28px;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+}
+
+.adBreakLabel {
+  font-size: 12px;
+  font-style: italic;
+}
+
+.adBreakLong td:first-child {
+  box-shadow: inset 3px 0 0 var(--warning);
+}

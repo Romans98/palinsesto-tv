@@ -39,10 +39,14 @@ export type AddResult = { status: 'ok'; program: Program } | { status: 'invalid'
 
 export type CommandOutcome<R> = { programs: Program[]; result: R };
 
-/** Modifica la durata con controllo ottimistico della versione */
+/**
+ * Modifica la durata con controllo ottimistico della versione.
+ * `now` è l'istante della modifica: lo fornisce il server, non il client, per non dipendere dall'orologio dei singoli utenti.
+ */
 export function applyUpdateDuration(
   programs: readonly Program[],
   command: UpdateDurationCommand,
+  now: number,
 ): CommandOutcome<UpdateResult> {
   const unchanged = [...programs];
   const index = programs.findIndex((p) => p.id === command.programId);
@@ -65,6 +69,7 @@ export function applyUpdateDuration(
     durationFrames: command.durationFrames,
     version: current.version + 1,
     updatedBy: command.user,
+    updatedAt: now,
   };
   const next = [...programs];
   next[index] = updated;
@@ -76,6 +81,7 @@ export function applyAddProgram(
   programs: readonly Program[],
   command: AddProgramCommand,
   id: string,
+  now: number,
 ): CommandOutcome<AddResult> {
   const invalid = (error: string): CommandOutcome<AddResult> => ({
     programs: [...programs],
@@ -96,6 +102,7 @@ export function applyAddProgram(
     fixedStartFrames: placement.kind === 'fixed' ? placement.startFrames : null,
     version: 1,
     updatedBy: command.user,
+    updatedAt: now,
   };
 
   let index: number;

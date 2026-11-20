@@ -30,7 +30,7 @@ const ENTRIES: SeedEntry[] = [
 ];
 
 /** Palinsesto dimostrativo di una giornata, dalle 06:00 alle 24:00 */
-export function createSeedPrograms(): Program[] {
+export function createSeedPrograms(now: number = 0): Program[] {
   return ENTRIES.map(([title, duration, fixedStart], index) => ({
     id: `seed-${index + 1}`,
     title,
@@ -38,5 +38,6 @@ export function createSeedPrograms(): Program[] {
     fixedStartFrames: fixedStart ?? null,
     version: 1,
     updatedBy: 'Sistema',
+    updatedAt: now,
   }));
 }

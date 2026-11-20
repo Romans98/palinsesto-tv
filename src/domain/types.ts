@@ -15,6 +15,8 @@ export type Program = {
   version: number;
   /** Utente che ha fatto l'ultima modifica */
   updatedBy: string;
+  /** Istante dell'ultima modifica (millisecondi epoch), assegnato dal server */
+  updatedAt: number;
 };
 
 export const isAnchor = (program: Program): boolean => program.fixedStartFrames !== null;

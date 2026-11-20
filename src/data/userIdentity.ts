@@ -1,7 +1,8 @@
 import type { StorageLike } from './FakeScheduleServer';
 
-const SESSION_KEY = 'palinsesto-tv/user';
 const COUNTER_KEY = 'palinsesto-tv/user-counter';
+export const CURRENT_USER_KEY = 'palinsesto-tv/user';
+export const SIMULATED_USER_KEY = 'palinsesto-tv/simulated-user';
 
 /** Prossimo nome utente libero ("Utente Test 1", "Utente Test 2", …), condiviso tra tutte le tab */
 export function nextUserName(shared: StorageLike): string {
@@ -11,13 +12,13 @@ export function nextUserName(shared: StorageLike): string {
 }
 
 /**
- * Nome dell'utente di questa tab.
+ * Nome utente legato alla tab.
  * Resta lo stesso se si ricarica la pagina (sessionStorage), cambia aprendo una nuova tab.
  */
-export function currentUserName(session: StorageLike, shared: StorageLike): string {
-  const existing = session.getItem(SESSION_KEY);
+export function sessionUserName(session: StorageLike, shared: StorageLike, key: string = CURRENT_USER_KEY): string {
+  const existing = session.getItem(key);
   if (existing !== null) return existing;
   const name = nextUserName(shared);
-  session.setItem(SESSION_KEY, name);
+  session.setItem(key, name);
   return name;
 }

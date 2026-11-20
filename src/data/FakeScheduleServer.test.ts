@@ -3,9 +3,10 @@ import { FRAMES_PER_MINUTE } from '../domain/timecode';
 import { FakeScheduleServer, type ExternalChanges, type StorageLike } from './FakeScheduleServer';
 import { createSeedPrograms } from './seed';
 import { SimulatedUser } from './SimulatedUser';
-import { currentUserName } from './userIdentity';
+import { sessionUserName } from './userIdentity';
 
 const min = (minutes: number) => minutes * FRAMES_PER_MINUTE;
+const NOW = Date.UTC(2026, 10, 20, 14, 30);
 
 /**
  * Simula un localStorage condiviso tra più tab: quando una "tab" scrive,
@@ -30,7 +31,7 @@ function createSharedBrowser() {
       tabListeners.add(onChange);
       return () => tabListeners.delete(onChange);
     };
-    return new FakeScheduleServer({ storage, externalChanges, latencyMs: 0, generateId: () => 'new-id' });
+    return new FakeScheduleServer({ storage, externalChanges, latencyMs: 0, generateId: () => 'new-id', now: () => NOW });
   };
 
   return { openTab };
@@ -44,7 +45,7 @@ const memoryStorage = (): StorageLike => {
 describe('FakeScheduleServer', () => {
   it('al primo avvio carica i dati demo', () => {
     const server = createSharedBrowser().openTab();
-    expect(server.getSnapshot()).toEqual(createSeedPrograms());
+    expect(server.getSnapshot()).toEqual(createSeedPrograms(NOW));
   });
 
   it('avvisa chi è iscritto a ogni modifica', async () => {
@@ -85,6 +86,7 @@ describe('FakeScheduleServer', () => {
       durationFrames: min(100),
       version: 2,
       updatedBy: 'Utente Test 1',
+      updatedAt: NOW,
     });
   });
 
@@ -120,7 +122,7 @@ describe('FakeScheduleServer', () => {
     const server = createSharedBrowser().openTab();
     await server.updateDuration({ programId: 'seed-2', durationFrames: min(100), expectedVersion: 1, user: 'u' });
     server.reset();
-    expect(server.getSnapshot()).toEqual(createSeedPrograms());
+    expect(server.getSnapshot()).toEqual(createSeedPrograms(NOW));
   });
 });
 
@@ -140,13 +142,13 @@ describe('SimulatedUser', () => {
   });
 });
 
-describe('currentUserName', () => {
+describe('sessionUserName', () => {
   it('assegna Utente Test 1, 2, … a tab diverse e mantiene il nome nella stessa tab', () => {
     const shared = memoryStorage();
     const tab1 = memoryStorage();
     const tab2 = memoryStorage();
-    expect(currentUserName(tab1, shared)).toBe('Utente Test 1');
-    expect(currentUserName(tab2, shared)).toBe('Utente Test 2');
-    expect(currentUserName(tab1, shared)).toBe('Utente Test 1');
+    expect(sessionUserName(tab1, shared)).toBe('Utente Test 1');
+    expect(sessionUserName(tab2, shared)).toBe('Utente Test 2');
+    expect(sessionUserName(tab1, shared)).toBe('Utente Test 1');
   });
 });

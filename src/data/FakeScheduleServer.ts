@@ -10,7 +10,8 @@ import type { Program } from '../domain/types';
 import type { ScheduleRepository } from './ScheduleRepository';
 import { createSeedPrograms } from './seed';
 
-export const STORAGE_KEY = 'palinsesto-tv/schedule';
+// Il suffisso di versione cambia quando cambia la forma dei dati salvati, così i dati vecchi vengono ignorati
+export const STORAGE_KEY = 'palinsesto-tv/schedule/v2';
 
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -22,6 +23,7 @@ export type FakeScheduleServerOptions = {
   externalChanges: ExternalChanges;
   latencyMs?: number;
   generateId?: () => string;
+  now?: () => number;
 };
 
 /**
@@ -34,6 +36,7 @@ export type FakeScheduleServerOptions = {
 export class FakeScheduleServer implements ScheduleRepository {
   private readonly storage: StorageLike;
   private readonly generateId: () => string;
+  private readonly now: () => number;
   private readonly listeners = new Set<() => void>();
   private latencyMs: number;
   private raw: string | null = null;
@@ -43,9 +46,10 @@ export class FakeScheduleServer implements ScheduleRepository {
     this.storage = options.storage;
     this.latencyMs = options.latencyMs ?? 500;
     this.generateId = options.generateId ?? (() => crypto.randomUUID());
+    this.now = options.now ?? Date.now;
 
     if (this.storage.getItem(STORAGE_KEY) === null) {
-      this.write(createSeedPrograms());
+      this.write(createSeedPrograms(this.now()));
     }
     this.refresh();
     options.externalChanges(() => {
@@ -70,16 +74,16 @@ export class FakeScheduleServer implements ScheduleRepository {
 
   async updateDuration(command: UpdateDurationCommand): Promise<UpdateResult> {
     await this.networkDelay();
-    return this.execute((programs) => applyUpdateDuration(programs, command));
+    return this.execute((programs) => applyUpdateDuration(programs, command, this.now()));
   }
 
   async addProgram(command: AddProgramCommand): Promise<AddResult> {
     await this.networkDelay();
-    return this.execute((programs) => applyAddProgram(programs, command, this.generateId()));
+    return this.execute((programs) => applyAddProgram(programs, command, this.generateId(), this.now()));
   }
 
   reset(): void {
-    this.write(createSeedPrograms());
+    this.write(createSeedPrograms(this.now()));
     if (this.refresh()) this.notify();
   }
 

@@ -38,8 +38,8 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6a. Timecode: parse, format e aritmetica, con test
   - [x] 6b. Motore di ricalcolo del palinsesto, con test
   - [x] 6c. Backend simulato con versioni e "altri utenti" fittizi
-  - [ ] 6d. Lista dei programmi
-  - [ ] 6e. Modifica della durata
+  - [x] 6d. Lista dei programmi
+  - [x] 6e. Modifica della durata
   - [ ] 6f. Aggiunta di un programma
   - [ ] 6g. Gestione dei conflitti di modifica concorrente
   - [ ] 6h. Feedback visivo quando i dati cambiano
@@ -237,6 +237,7 @@ type Program = {
   fixedStartFrames: number | null;   // presente solo per le ancore (D-003)
   version: number;                   // blocco ottimistico (D-004)
   updatedBy: string;                 // chi ha fatto l'ultima modifica, per il feedback visivo (RF8)
+  updatedAt: number;                 // quando (millisecondi epoch), assegnato dal server
 };
 // Il palinsesto è un array ordinato di Program.
 // Inizi dei flottanti, fine e pubblicità sono sempre calcolati, mai salvati.
@@ -263,15 +264,29 @@ type Program = {
 - **Il ritardo di rete viene applicato prima di eseguire il comando**: il comando viene valutato sullo stato presente *all'arrivo* al "server", come nella realtà. È proprio questo a far nascere i conflitti durante la demo.
 - **Evoluzione**: un vero backend in tempo reale (vedi "Come si può migliorare").
 
+### D-013: dependency injection e ViewModel
+
+- **Dependency injection con un Context React**: `AppServicesProvider`, in cima all'app, fornisce repository, utente corrente e utente simulato. I componenti li ottengono con `useAppServices()`. È l'equivalente di un *dependency container* passato al coordinator o al view controller in UIKit. Nei test basta fornire un provider con implementazioni finte.
+- **`useScheduleViewModel`** (schermata): si collega al repository con `useSyncExternalStore`, ricalcola il palinsesto solo quando cambiano i dati (`useMemo`) e gestisce selezione e riga in modifica. La regola "una sola riga in modifica alla volta" è garantita in un unico punto.
+- **`useEditDurationViewModel`** (sessione di modifica): lo usa solo il componente `DurationEditor`, che esiste solo mentre la riga è in modifica. Il ciclo di vita del ViewModel coincide quindi con la sessione, e alla chiusura lo stato viene scartato da solo.
+  - all'apertura memorizza la **versione di partenza**, che viene inviata come `expectedVersion`;
+  - stati: `editing → saving → (chiuso | editing con errore | conflict)`;
+  - l'avviso "qualcuno ha cambiato questo programma" è **derivato** (la versione attuale è diversa da quella di partenza), non è uno stato da sincronizzare;
+  - se la durata non è cambiata, Invio chiude senza chiamare il server.
+- **Campo timecode a maschera fissa**, che si scrive **da sinistra verso destra** come i campi data: la cifra sotto il cursore è evidenziata e viene sovrascritta, i `:` vengono saltati, frecce, Home/Fine e clic spostano il cursore, Backspace torna indietro, incollare `00:30:00:00` funziona. Il campo contiene sempre un timecode formattato, quindi gli unici errori possibili sono di dominio (es. frame > 24, durata zero).
+  - *Prima versione scartata*: inserimento "da destra" come nei software di montaggio (digitando `3000` si otteneva `00:00:30:00`). Provandolo è risultato scomodo per chi non viene dal montaggio.
+- **Uscire dal campo equivale ad annullare** (come Esc), ma solo mentre si sta scrivendo: non durante il salvataggio né con il conflitto aperto. **Eccezione voluta**: se è l'intera finestra a perdere il focus (si passa a un'altra tab o applicazione) la modifica resta aperta. Altrimenti sarebbe impossibile lavorare con due tab affiancate, che è proprio lo scenario multiutente da mostrare.
+
 ### Struttura delle cartelle
 
 ```text
 src/
-  domain/   timecode.ts, schedule.ts, types.ts (+ test)
+  app/      services.ts (dipendenze condivise), AppServicesProvider.tsx
+  domain/   timecode.ts, schedule.ts, commands.ts, types.ts (+ test)
   data/     ScheduleRepository.ts, FakeScheduleServer.ts, seed.ts
   hooks/    useScheduleViewModel.ts, useEditDurationViewModel.ts
-  ui/       ScheduleScreen, ScheduleTable, ProgramRow, AdBreakRow,
-            TimecodeInput, ConflictDialog, AddProgramForm, SimulationPanel
+  ui/       ScheduleScreen, ScheduleHeader, ScheduleTable, ProgramRow, AdBreakRow,
+            DurationEditor, TimecodeInput, (ConflictDialog, AddProgramDialog, SimulationPanel)
 ```
 
 ---
@@ -323,11 +338,20 @@ src/
 
 - **Perché sia l'avviso immediato sia il dialogo**: l'avviso **previene** la sorpresa ("sto lavorando su un dato vecchio"). Il dialogo è la **rete di sicurezza** quando l'utente salva comunque, ed è l'unico punto dove la decisione viene davvero applicata.
 
-### D-012: stile visivo
+### D-012: stile visivo (rivisto dopo la prima prova)
 
-- **Tema scuro**, come i software di regia e broadcast.
-- **Timecode in carattere monospazio**, con cifre di larghezza fissa (`tabular-nums`), così le colonne non "ballano" quando i valori cambiano.
-- **Colori solo con un significato preciso**: rosso per gli sforamenti, giallo per gli avvisi, blu per gli aggiornamenti da altri utenti, grigio per la pubblicità.
+- **Prima versione**: tema scuro "da regia", timecode in monospazio, emoji come icone.
+- **Problema emerso provandola**: contrasto basso e lettura faticosa. Soprattutto l'aspetto era quello tipico di un'interfaccia generata dall'IA (sfondo nero, emoji, righe a strisce), poco credibile come strumento di lavoro.
+- **Scelta attuale**: le convenzioni dei **software gestionali** su cui si basano i tool di palinsesto professionali (griglie in stile AG Grid o Google Sheets):
+  - tema **chiaro**, griglia densa con bordi sottili e intestazioni fisse;
+  - font di sistema con **cifre a larghezza fissa** (`tabular-nums`) invece del monospazio, così le colonne restano allineate;
+  - **icone vettoriali** (SVG) al posto delle emoji;
+  - colore **solo dove c'è un significato**: rosso per gli sforamenti, ambra per gli avvisi, blu per azioni e selezione; tutto il resto è in scala di grigi;
+  - una barra con il riepilogo dei problemi e una legenda (orario fisso, pubblicità calcolata, 25 fps);
+  - le colonne **"Modificato da"** e **"Modificato alle"** mostrano chi ha toccato ogni programma e quando (solo l'ora se è oggi, altrimenti anche la data; nel tooltip la data completa). Sono due colonne separate, così nomi e orari restano allineati. È utile per il lavoro a più mani e prepara il feedback sui cambiamenti.
+  - L'istante della modifica lo assegna il **server**, non il browser di chi modifica: gli orologi dei client possono essere sbagliati o non allineati. Le funzioni dei comandi lo ricevono come parametro, quindi restano pure e testabili.
+  - Cambiando la forma dei dati salvati è cambiata anche la chiave nel `localStorage` (`…/v2`): i dati vecchi di chi aveva già aperto la demo vengono ignorati invece di rompere l'app.
+- **Lezione**: le scelte estetiche vanno validate guardando il risultato, non solo sulla carta.
 
 ### Albero dei componenti
 
@@ -362,10 +386,14 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | 6a. Timecode (`src/domain/timecode.ts`) con 24 test | Frame interi; `parseTimecode` controlla solo il formato, `validateDuration` applica i limiti di dominio (D-005). Gli errori sono valori di ritorno (`Result`, come in Swift), non eccezioni: un input sbagliato dell'utente è un caso previsto, non un'anomalia |
 | 2026-11-20 | 6b. Motore di ricalcolo `computeSchedule` (`src/domain/schedule.ts`) con 20 test | Funzione pura: riceve i programmi salvati e restituisce righe pronte per la UI (orari, pubblicità, sforamenti, proposta di troncamento) più il riepilogo dei problemi. Casi di test concordati prima di scrivere il codice |
 | 2026-11-20 | 6c. Backend simulato: `domain/commands.ts`, `data/` (repository, server simulato, utente simulato, identità, dati demo) | 76 test in totale. Utenti chiamati "Utente Test N" su richiesta. Il vincolo `erasableSyntaxOnly` del template vieta le *parameter properties* nei costruttori, quindi i campi sono dichiarati in modo esplicito |
+| 2026-11-20 | 6d + 6e. Prima UI: dependency injection, ViewModel, tabella in tema scuro, modifica della durata (D-013) | Il conflitto ha già una prima versione inline nell'editor; la versione definitiva (dialogo + avviso immediato) arriva al passo 6g |
+| 2026-11-20 | Revisione dopo la prima prova | Interfaccia rifatta in stile gestionale chiaro (D-012), timecode da sinistra verso destra e chiusura dell'editor alla perdita del focus (D-013). Corretto un bug: uscendo dal campo l'editor restava aperto ma non rispondeva più a Invio ed Esc |
 
 ---
 
 ## 8. Cosa ho lasciato per strada
+
+- **Test dei componenti React** (Testing Library + jsdom): la logica non banale è in funzioni pure già coperte da test; i hook e i componenti sono volutamente sottili. Con più tempo aggiungerei test di interazione sul campo timecode e sul flusso di conflitto.
 
 - **Modalità automatica dell'utente simulato** (una modifica casuale ogni N secondi): scartata a favore di pulsanti espliciti, per una demo ripetibile.
 - **Transazionalità vera tra le tab**: il `localStorage` non offre un compare-and-set atomico tra processi diversi. La finestra di rischio è minima, ma un backend reale la eliminerebbe.

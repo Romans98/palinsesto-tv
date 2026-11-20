@@ -15,6 +15,7 @@ const floating = (id: string, duration: Frames): Program => ({
   fixedStartFrames: null,
   version: 1,
   updatedBy: 'test',
+  updatedAt: 0,
 });
 
 const anchor = (id: string, start: Frames, duration: Frames): Program => ({
