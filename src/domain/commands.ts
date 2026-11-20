@@ -1,5 +1,5 @@
 import { computeSchedule } from './schedule';
-import { FRAMES_PER_DAY, validateDuration, type Frames } from './timecode';
+import { validateDuration, type Frames } from './timecode';
 import type { Program } from './types';
 
 /**
@@ -128,8 +128,8 @@ export function applyAddProgram(
     }
   } else {
     const start = placement.startFrames;
-    if (!Number.isInteger(start) || start < 0 || start >= FRAMES_PER_DAY) {
-      return invalid("L'orario di inizio deve essere compreso nella giornata");
+    if (!Number.isInteger(start) || start < 0) {
+      return invalid("L'orario di inizio non è valido");
     }
     const overlapping = findOverlappingAnchor(programs, start, start + command.durationFrames);
     if (overlapping) {

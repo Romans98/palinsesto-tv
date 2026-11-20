@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeSchedule } from '../domain/schedule';
-import { formatTimecode } from '../domain/timecode';
+import { computeSchedule, groupByDay } from '../domain/schedule';
+import { formatTimecode, FRAMES_PER_DAY } from '../domain/timecode';
 import { createSeedPrograms } from './seed';
 
 describe('dati demo', () => {
@@ -10,10 +10,14 @@ describe('dati demo', () => {
     expect(schedule.issues).toEqual({ overflows: 0, longAdBreaks: 0 });
   });
 
-  it('coprono la giornata dalle 06:00 alle 24:00', () => {
+  it('coprono due giorni consecutivi, dalle 06:00 del primo alle 24:00 del secondo', () => {
     const rows = schedule.rows;
     expect(formatTimecode(rows[0].start)).toBe('06:00:00:00');
-    expect(formatTimecode(rows[rows.length - 1].end)).toBe('24:00:00:00');
+    expect(rows[rows.length - 1].end).toBe(2 * FRAMES_PER_DAY);
+  });
+
+  it('trasmettono anche di notte, senza buchi tra i due giorni', () => {
+    expect(groupByDay(schedule.rows).map((day) => day.index)).toEqual([0, 1]);
   });
 
   it('hanno id univoci', () => {

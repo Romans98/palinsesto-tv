@@ -143,8 +143,14 @@ describe('applyAddProgram', () => {
     expect(show).toMatchObject({ overflow: { amount: min(30) } });
   });
 
-  it('rifiuta un orario di inizio fuori dalla giornata', () => {
-    expect(add({ kind: 'fixed', startFrames: FRAMES_PER_DAY }).result.status).toBe('invalid');
+  it('rifiuta un orario di inizio negativo', () => {
+    expect(add({ kind: 'fixed', startFrames: -1 }).result.status).toBe('invalid');
+  });
+
+  it("un'ancora del giorno successivo va in fondo, dopo tutti i programmi del primo giorno", () => {
+    const { programs: next, result } = add({ kind: 'fixed', startFrames: FRAMES_PER_DAY + at(6) });
+    expect(result.status).toBe('ok');
+    expect(ids(next)).toEqual(['mattino', 'show', 'tg', 'film', 'new']);
   });
 
   it('rifiuta un titolo vuoto e una durata non valida', () => {

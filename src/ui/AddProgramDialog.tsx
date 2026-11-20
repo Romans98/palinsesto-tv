@@ -1,18 +1,20 @@
 import type { FormEvent } from 'react';
-import { formatTimecode } from '../domain/timecode';
+import { dayIndexOf } from '../domain/schedule';
 import { useAddProgramViewModel, type InsertionPoint } from '../hooks/useAddProgramViewModel';
 import styles from './AddProgramDialog.module.css';
+import { formatDayLabel, formatStart } from './formatTimeOfDay';
 import { Modal } from './Modal';
 import modal from './Modal.module.css';
 import { TimecodeInput } from './TimecodeInput';
 
 type Props = {
   insertAfter: InsertionPoint | null;
+  dayCount: number;
   onDone: (createdId: string | null) => void;
 };
 
-export function AddProgramDialog({ insertAfter, onDone }: Props) {
-  const vm = useAddProgramViewModel(insertAfter, onDone);
+export function AddProgramDialog({ insertAfter, dayCount, onDone }: Props) {
+  const vm = useAddProgramViewModel(insertAfter, dayCount, onDone);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -65,7 +67,8 @@ export function AddProgramDialog({ insertAfter, onDone }: Props) {
                 <span className={styles.optionHint}>
                   {vm.insertAfter ? (
                     <>
-                      Dopo «{vm.insertAfter.title}», inizio previsto alle {formatTimecode(vm.insertAfter.end)}. Si sposta
+                      Dopo «{vm.insertAfter.title}», inizio previsto alle {formatStart(vm.insertAfter.end).text} del giorno{' '}
+                      {dayIndexOf(vm.insertAfter.end) + 1}. Si sposta
                       se cambia la durata dei programmi precedenti.
                     </>
                   ) : (
@@ -86,16 +89,30 @@ export function AddProgramDialog({ insertAfter, onDone }: Props) {
             {vm.kind === 'fixed' && (
               <div className={styles.startField}>
                 <span className={styles.label}>Inizio</span>
-                <TimecodeInput
-                  label="Orario di inizio"
-                  value={vm.start}
-                  onChange={vm.setStart}
-                  onEnter={vm.submit}
-                  onEscape={vm.cancel}
-                  invalid={vm.errors.start !== null}
-                  disabled={vm.saving}
-                  autoFocus={false}
-                />
+                <div className={styles.startInputs}>
+                  <select
+                    className={styles.daySelect}
+                    value={vm.startDay}
+                    onChange={(event) => vm.setStartDay(Number(event.target.value))}
+                    aria-label="Giorno"
+                  >
+                    {vm.dayOptions.map((day) => (
+                      <option key={day} value={day}>
+                        {formatDayLabel(day)}
+                      </option>
+                    ))}
+                  </select>
+                  <TimecodeInput
+                    label="Orario di inizio"
+                    value={vm.start}
+                    onChange={vm.setStart}
+                    onEnter={vm.submit}
+                    onEscape={vm.cancel}
+                    invalid={vm.errors.start !== null}
+                    disabled={vm.saving}
+                    autoFocus={false}
+                  />
+                </div>
                 {vm.errors.start && <span className={styles.error}>{vm.errors.start}</span>}
               </div>
             )}

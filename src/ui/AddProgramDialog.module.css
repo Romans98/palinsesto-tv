@@ -79,6 +79,22 @@
   color: var(--text-muted);
 }
 
+.startInputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.daySelect {
+  height: 26px;
+  padding: 0 6px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
 .startField {
   display: flex;
   flex-direction: column;

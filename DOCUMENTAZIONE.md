@@ -54,7 +54,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 
 ### 3.1 Glossario
 
-- **Palinsesto**: la sequenza ordinata dei programmi di un canale in una giornata.
+- **Palinsesto**: la sequenza ordinata dei programmi di un canale, su uno o più giorni consecutivi (vedi D-016).
 - **Programma**: ha titolo, inizio e durata. La fine è un valore **calcolato**, non salvato.
 - **Programma a orario fisso** ("ancora"): l'inizio lo decide l'utente e il sistema non lo sposta mai. Esempio: il TG delle 20:00:00:00.
 - **Programma flottante**: l'inizio è **calcolato** e coincide con la fine del programma precedente.
@@ -87,7 +87,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 
 ### 3.4 Ipotesi
 
-- Un solo canale e un solo giorno, dalle 00:00:00:00 alle 24:00:00:00. Nessun programma attraversa la mezzanotte.
+- Un solo canale. Il palinsesto copre **più giorni consecutivi** e i programmi possono attraversare la mezzanotte. *Inizialmente* l'ipotesi era una giornata singola, superata con D-016.
 - I dati sono simulati: un finto backend nel browser e alcuni "altri utenti" simulati.
 - Non c'è autenticazione: ogni tab riceve un nome utente progressivo ("Utente Test 1", "Utente Test 2", …).
 - La pubblicità **non viene salvata**: si ricava ogni volta dagli orari, così non può diventare incoerente con i programmi. In compenso è **visibile**, come riga dedicata con la sua durata.
@@ -145,7 +145,8 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
      - È **disabilitata** quando lo sforamento è più lungo del programma stesso, perché andrebbe sotto il minimo di 1 frame (D-005). In quel caso un tooltip invita ad accorciare anche altri programmi.
   - **Casi limite decisi in fase di implementazione**:
     - un'**ancora** che sfora l'ancora successiva è segnalata e troncabile come un flottante: troncarla ne cambia la durata, non l'orario di inizio, che resta fisso. "Tronca" vale quindi per l'ultimo *programma* prima dell'ancora, non solo per l'ultimo flottante;
-    - superare la **fine della giornata** (24:00) è uno sforamento come gli altri;
+    - ~~superare la fine della giornata (24:00) è uno sforamento come gli altri~~ → *superato da D-016*: il palinsesto continua nel giorno successivo e la mezzanotte non è più un limite;
+    - **gli orari mostrati non superano mai le 24 ore**: con il palinsesto su più giorni, ogni programma è mostrato sotto il giorno in cui inizia. Se finisce dopo la mezzanotte, la fine appare come orario del giorno successivo con `+1` (es. `00:50:00:00 +1`). Le `24:00:00:00` restano valide come fine esatta del giorno. Internamente il tempo resta un conteggio continuo di frame dall'inizio del palinsesto. *Nota*: nel broadcast esiste anche la convenzione della "giornata televisiva" con orari come `25:00` per le 01:00 della notte. È stata scartata perché poco intuitiva per chi non è del settore.
     - lo spazio **prima del primo programma** è fuori palinsesto, non pubblicità. Altrimenti un palinsesto che parte alle 06:00 mostrerebbe 6 ore di "pubblicità".
   - **Concorrenza anche su "Tronca"**: la proposta (durata attuale e nuova) viene **fissata all'apertura** della conferma insieme alla versione del programma. Se nel frattempo qualcuno modifica quel programma, la conferma si blocca e lo segnala invece di applicare un calcolo fatto su dati vecchi. Se la modifica altrui arriva proprio mentre si conferma, il server risponde con un conflitto, come per ogni altra modifica.
   - *Lasciato per strada*: altre risoluzioni possibili, come spostare un flottante dopo l'ancora o trasformare l'ancora in flottante. Richiedono operazioni fuori ambito (riordino, modifica del tipo).
@@ -169,9 +170,29 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 - **Concorrenza**: come per "Tronca", la richiesta viene fissata all'apertura della conferma. Se nel frattempo il programma viene modificato o eliminato da un altro, la conferma si blocca e lo segnala.
 - **Lasciato per strada**: annullare l'eliminazione (undo) e un cestino da cui recuperare i programmi.
 
+### D-016: palinsesto su più giorni (aggiunta in corso d'opera)
+
+- **Contesto**: all'inizio il palinsesto copriva una sola giornata, dalle 00:00 alle 24:00, e superare la mezzanotte era uno sforamento. Il bug P-4 (orari come `25:00`) ha mostrato che il vincolo era artificiale.
+- **Alternative**:
+  - (A) tenere la giornata singola e documentare il limite;
+  - (B) palinsesto su più giorni, con una colonna "Data" in ogni riga;
+  - (C) palinsesto su più giorni, con una **riga di separazione per ogni giorno**.
+- **Scelta**: **C**. È lo standard di palinsesti ed EPG, e la stessa data non si ripete su decine di righe. È stata realizzata nel modo più semplice possibile:
+  - **il modello non cambia**: il tempo è un conteggio continuo di frame dalle 00:00 del primo giorno. Un'ancora del giorno 2 alle 06:00 ha semplicemente `fixedStartFrames = 24 h + 6 h`. Il tipo `Program` e il formato dei dati salvati restano identici;
+  - **le date non vengono salvate**: il giorno 1 è il giorno in cui si apre la demo, il giorno N è oggi + (N−1);
+  - **scompare lo sforamento della fine giornata**: lo sforamento esiste solo verso le ancore, e codice e tipi si semplificano (`OverflowTarget` indica solo un'ancora);
+  - ogni programma è mostrato sotto il **giorno in cui inizia**. La fine oltre la mezzanotte mostra `+1`;
+  - la riga del giorno è una **fascia grigio ardesia al 30%** con testo scuro. Una prima versione in grigio chiaro si confondeva con le righe della pubblicità; la versione piena (scura con testo bianco) risultava troppo pesante;
+  - per aggiungere un'ancora si sceglie **giorno** (quelli presenti più il successivo) e **ora**;
+  - dati demo su **due giorni consecutivi, 24 ore su 24**, compresa la programmazione notturna, così non ci sono buchi notturni segnalati come pubblicità lunga;
+  - nessuna migrazione dei dati: dopo l'aggiornamento basta "Ripristina demo".
+- **Lasciato per strada**:
+  - una **data di inizio salvata**: oggi, se si riapre la demo un altro giorno, le date "scorrono";
+  - la regola **"Fine trasmissioni"** per i canali che non trasmettono 24 ore su 24: oggi un vuoto notturno di ore sarebbe segnalato come pubblicità troppo lunga.
+
 ### D-005: limiti di durata
 
-- **Scelta**: durata minima 1 frame (`00:00:00:01`), massima la fine della giornata. La validazione del timecode accetta frame da 0 a 24 e minuti e secondi da 0 a 59.
+- **Scelta**: durata minima 1 frame (`00:00:00:01`), massima 24 ore (`24:00:00:00`). La validazione del timecode accetta frame da 0 a 24 e minuti e secondi da 0 a 59.
 
 ### D-006: segnalazione dei blocchi pubblicitari troppo lunghi
 
@@ -183,7 +204,7 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 
 - **Scelta**: un form con titolo, durata e tipo.
   - **Flottante**: si inserisce dopo il programma selezionato.
-  - **A orario fisso**: si indica l'orario di inizio e il programma si colloca da solo. Viene rifiutato se si sovrappone a un'altra ancora.
+  - **A orario fisso**: si indicano **giorno e ora** di inizio (D-016) e il programma si colloca da solo. Viene rifiutato se si sovrappone a un'altra ancora.
 - **Dettagli emersi in implementazione**:
   - **senza nessuna riga selezionata**, il flottante va **in coda** al palinsesto (più naturale di "in cima", che lo farebbe partire alle 00:00);
   - per il flottante la finestra mostra **dove finirà e a che ora inizierà** ("Dopo «Meteo», inizio previsto alle 08:34:50:12"). L'utente capisce l'effetto prima di confermare;
@@ -357,6 +378,7 @@ src/
 | Situazione | Comportamento |
 |------------|---------------|
 | Modificare la durata | Clic sulla cella: si apre un campo timecode con la maschera `HH:MM:SS:FF` (si digitano solo le cifre). Invio salva, Esc annulla, bordo rosso se il valore non è valido |
+| Clic su una riga | La seleziona (azzurro): la selezione indica dove inserire un nuovo flottante e su quale programma agisce l'utente simulato. Un secondo clic la deseleziona, tranne mentre se ne modifica la durata |
 | Riga a orario fisso | Icona 🔒, bordo sinistro marcato, inizio in grassetto |
 | Riga pubblicità | Calcolata e non modificabile, stile grigio tratteggiato. Gialla oltre i 12 minuti (D-006) |
 | Sforamento | Riga rossa con la quantità sforata e il pulsante [Tronca], che apre la conferma con la durata prima e dopo (D-003) |
@@ -374,7 +396,7 @@ src/
 - **Contesto**: la traccia chiede cosa vede l'utente quando i dati cambiano mentre li sta guardando.
 - **Rilevamento**: una funzione pura, `detectRemoteChanges(prima, dopo, utente)`, confronta due snapshot e trova i programmi modificati (versione cresciuta), aggiunti o eliminati da altri. Non servono log di eventi né infrastruttura aggiuntiva.
 - **Cosa vede l'utente**:
-  - la **riga modificata** si colora di azzurro e torna normale con una dissolvenza dopo circa 2,5 s. Una nuova modifica alla stessa riga prolunga l'evidenziazione;
+  - la **riga modificata** si colora di azzurro per circa 2,5 s e poi torna normale, **senza animazioni**. Una nuova modifica alla stessa riga prolunga l'evidenziazione. *Prima versione scartata*: una dissolvenza di 0,9 s, che per errore si applicava anche alla selezione e al passaggio del mouse, rendendoli lenti;
   - una **notifica** in basso a destra ("Utente Test 2 ha modificato «Quiz Show»"). È indispensabile per le **eliminazioni**, che non hanno più una riga da evidenziare. Se l'eliminazione riguarda il programma che sto modificando, la notifica lo dice esplicitamente;
   - se arrivano più modifiche insieme, un'**unica notifica riassuntiva** ("Palinsesto aggiornato da altri utenti: N modifiche"), invece di una raffica;
   - le colonne "Modificato da / alle" restano come traccia permanente di chi ha toccato cosa.
@@ -439,10 +461,46 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | D-014: eliminazione di un programma | Nuovo comando con controllo di versione, conferma con l'effetto sul palinsesto; 92 test in totale |
 | 2026-11-20 | 6h + 6i. Feedback sulle modifiche altrui (D-015) e pannello "Strumenti demo" (D-010) | `detectRemoteChanges` con 7 test, 99 test in totale. Il lint ha segnalato una dipendenza mancante in un effetto: risolta leggendo i valori di contesto da un ref invece di silenziare l'avviso |
 | 2026-11-20 | Rimosso il ritardo di rete simulato e il relativo selettore del pannello | Rallentava la demo senza aggiungere valore; l'opzione resta nel server per i test |
+| 2026-11-20 | Correzione: orari oltre la mezzanotte mostrati come `25:00:00:00` | Ora appaiono come orari del giorno successivo con `+1` (`formatTimeOfDay`, 4 test). Corretto anche il testo del badge ("Oltre la fine della giornata") |
+| 2026-11-20 | Nuova sezione "Problemi riscontrati" (P-1 … P-4) | Raccoglie i bug trovati provando l'app, con causa, correzione e lezione |
+| 2026-11-20 | D-016: palinsesto su più giorni | Proposta discussa e approvata prima del codice. Modello invariato (frame continui), righe di separazione per giorno, scelta del giorno per le ancore, dati demo su 2 giorni 24 ore su 24; 109 test |
+| 2026-11-20 | Un secondo clic su una riga selezionata la deseleziona | Valutato e scartato di rendere le righe non cliccabili: la selezione serve all'inserimento dei flottanti e al pannello demo |
+| 2026-11-20 | Rimosse le animazioni sulle righe | La transizione pensata per far sparire l'evidenziazione delle modifiche altrui si applicava a tutte le righe, rallentando selezione e passaggio del mouse |
 
 ---
 
-## 8. Cosa ho lasciato per strada
+## 8. Problemi riscontrati
+
+Problemi emersi **provando l'app**, non dai test automatici. Per ognuno: come si manifestava, la causa, la correzione e cosa ne ho imparato.
+
+### P-1: l'editor della durata restava aperto ma "morto"
+- **Sintomo**: cliccando su una durata e poi su un'altra riga, il campo restava aperto ma non rispondeva più a Invio ed Esc.
+- **Causa**: la tastiera arriva solo all'elemento con il focus. Uscendo dal campo, il campo restava a schermo senza più ricevere i tasti.
+- **Correzione**: perdere il focus equivale a Esc, tranne quando è l'intera finestra a perderlo (passaggio a un'altra tab), per non rompere la demo con due tab affiancate (D-013).
+- **Lezione**: ogni stato "aperto" della UI deve avere un'uscita per tutte le strade con cui l'utente può andarsene.
+
+### P-2: finestra di conflitto con scorrimento orizzontale
+- **Sintomo**: il testo della finestra non andava a capo e la finestra scorreva in orizzontale.
+- **Causa**: la finestra era annidata nella cella della durata ed ereditava `white-space: nowrap`, pensato per non spezzare il timecode.
+- **Correzione**: tutte le finestre modali vengono montate nel `body` con un *portal* React. I clic vengono fermati in modo esplicito, perché nei portal React gli eventi risalgono comunque l'albero dei componenti (D-011).
+- **Lezione**: l'ereditarietà CSS segue la posizione nel DOM, non la posizione visiva sullo schermo.
+
+### P-3: programmi oltre l'ancora non segnalati
+- **Sintomo**: allungando di 3 ore il Talk Show, diversi programmi finivano interamente dopo il TG delle 20:00 con orari impossibili (es. 22:05 sopra il TG delle 20:00). Solo l'ultimo era segnalato.
+- **Causa**: lo sforamento era attribuito a un solo programma, il che funziona solo se lo sforamento è piccolo.
+- **Correzione**: lo sforamento diventa un problema del **segmento** e dell'ancora. L'ancora riporta il totale e ogni programma coinvolto è segnalato (revisione di D-003, 8 nuovi test sul caso concreto).
+- **Lezione**: un modello va provato con i casi estremi, non solo con quelli "di tutti i giorni".
+
+### P-4: orari oltre le 24 ore (`25:00:00:00`)
+- **Sintomo**: allungando il Telegiornale della Notte (23:30) a 1 h 20', le fine e gli inizi dopo la mezzanotte apparivano come `24:50:00:00` e `25:00:00:00`. Anche il badge era sgrammaticato ("Dopo l'inizio di la fine della giornata").
+- **Causa**: internamente il tempo è un conteggio continuo di frame dall'inizio della giornata, ed era mostrato così com'era anche oltre le 24 ore. Il testo del badge era costruito componendo frasi pensate solo per le ancore.
+- **Correzione**: oltre la mezzanotte l'orario riparte da 00 con l'indicatore `+1` (giorno successivo), mentre le `24:00:00:00` restano valide solo come fine della giornata (`formatTimeOfDay`, 4 test). Il badge ha ora un testo dedicato: "Oltre la fine della giornata".
+- **Lezione**: un buon modello interno (frame continui) non va mostrato così com'è. La conversione verso il linguaggio dell'utente è un passaggio a sé, da testare.
+- **Sviluppo successivo**: il bug ha mostrato che il vincolo della giornata singola era **artificiale**. Nella realtà un film delle 23:00 finisce all'01:00. Da qui la decisione **D-016**: palinsesto su più giorni. L'indicatore `+1` introdotto per questo bug è rimasto, con un significato più corretto: "finisce nel giorno successivo a quello in cui inizia".
+
+## 9. Cosa ho lasciato per strada
+
+- **Data di inizio del palinsesto salvata** e regola **"Fine trasmissioni"** per i canali non 24 ore su 24 (D-016).
 
 - **Test dei componenti React** (Testing Library + jsdom): la logica non banale è in funzioni pure già coperte da test; i hook e i componenti sono volutamente sottili. Con più tempo aggiungerei test di interazione sul campo timecode e sul flusso di conflitto.
 
@@ -453,7 +511,7 @@ ScheduleScreen                 ← useScheduleViewModel
 
 ---
 
-## 9. Come si può migliorare
+## 10. Come si può migliorare
 
 - Autenticazione e permessi (ruoli diversi: chi può spostare un programma a orario fisso?)
 - Multiutente reale tra dispositivi diversi: un backend in tempo reale (es. Supabase o Firebase Realtime, oppure un'API con WebSocket) che sostituisce `FakeScheduleServer` dietro la stessa interfaccia `ScheduleRepository`

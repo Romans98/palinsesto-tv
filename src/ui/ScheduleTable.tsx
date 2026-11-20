@@ -1,5 +1,6 @@
-import type { ScheduleRow } from '../domain/schedule';
+import { groupByDay, type ScheduleRow } from '../domain/schedule';
 import { AdBreakRow } from './AdBreakRow';
+import { formatDayLabel } from './formatTimeOfDay';
 import { ProgramRow } from './ProgramRow';
 import styles from './ScheduleTable.module.css';
 
@@ -49,24 +50,30 @@ export function ScheduleTable({
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) =>
-          row.kind === 'adBreak' ? (
-            <AdBreakRow key={row.id} row={row} />
-          ) : (
-            <ProgramRow
-              key={row.program.id}
-              row={row}
-              isSelected={row.program.id === selectedId}
-              isHighlighted={highlightedIds.has(row.program.id)}
-              isEditing={row.program.id === editingId}
-              onSelect={() => onSelect(row.program.id)}
-              onStartEditing={() => onStartEditing(row.program.id)}
-              onStopEditing={onStopEditing}
-              onTruncate={() => onTruncate(row.program.id)}
-              onDelete={() => onDelete(row.program.id)}
-            />
+        {/* Un unico elenco piatto: le righe restano le stesse anche se un programma cambia giorno */}
+        {groupByDay(rows).flatMap((day) => [
+          <tr key={`day-${day.index}`} className={styles.dayHeader}>
+            <td colSpan={7}>{formatDayLabel(day.index)}</td>
+          </tr>,
+          ...day.rows.map((row) =>
+            row.kind === 'adBreak' ? (
+              <AdBreakRow key={row.id} row={row} />
+            ) : (
+              <ProgramRow
+                key={row.program.id}
+                row={row}
+                isSelected={row.program.id === selectedId}
+                isHighlighted={highlightedIds.has(row.program.id)}
+                isEditing={row.program.id === editingId}
+                onSelect={() => onSelect(row.program.id)}
+                onStartEditing={() => onStartEditing(row.program.id)}
+                onStopEditing={onStopEditing}
+                onTruncate={() => onTruncate(row.program.id)}
+                onDelete={() => onDelete(row.program.id)}
+              />
+            ),
           ),
-        )}
+        ])}
       </tbody>
     </table>
   );

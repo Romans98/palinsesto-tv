@@ -1,6 +1,7 @@
-import type { OverflowTarget, ProgramRow } from '../domain/schedule';
-import { FRAMES_PER_DAY, formatTimecode } from '../domain/timecode';
+import type { ProgramRow } from '../domain/schedule';
+import { formatTimecode } from '../domain/timecode';
 import { useTruncateViewModel } from '../hooks/useTruncateViewModel';
+import { formatEnd } from './formatTimeOfDay';
 import { Modal } from './Modal';
 import modal from './Modal.module.css';
 import styles from './TruncateDialog.module.css';
@@ -9,9 +10,6 @@ type Props = {
   liveRow: ProgramRow | undefined;
   onClose: () => void;
 };
-
-const targetDescription = (target: OverflowTarget) =>
-  target.kind === 'anchor' ? `inizio di «${target.title}»` : 'fine della giornata';
 
 export function TruncateDialog({ liveRow, onClose }: Props) {
   const vm = useTruncateViewModel(liveRow, onClose);
@@ -38,11 +36,11 @@ export function TruncateDialog({ liveRow, onClose }: Props) {
                 </tr>
                 <tr>
                   <th>Terminerà alle</th>
-                  <td>{formatTimecode(Math.min(proposal.start + proposal.newDuration, FRAMES_PER_DAY))}</td>
+                  <td>{formatEnd(proposal.start, proposal.start + proposal.newDuration).text}</td>
                 </tr>
                 <tr>
                   <th>Limite</th>
-                  <td className={styles.target}>{targetDescription(proposal.against)}</td>
+                  <td className={styles.target}>inizio di «{proposal.against.title}»</td>
                 </tr>
               </tbody>
             </table>

@@ -1,11 +1,12 @@
-import { fromParts, type Frames } from '../domain/timecode';
+import { FRAMES_PER_DAY, fromParts, type Frames } from '../domain/timecode';
 import type { Program } from '../domain/types';
 
 const tc = (h: number, m: number, s = 0, f = 0): Frames => fromParts(h, m, s, f);
 
 type SeedEntry = [title: string, duration: Frames, fixedStart?: Frames];
 
-const ENTRIES: SeedEntry[] = [
+/** Programmazione diurna, dalle 06:00 alle 24:00 (orari delle ancore relativi al giorno) */
+const DAYTIME: SeedEntry[] = [
   ['Notiziario del Mattino', tc(0, 30), tc(6, 0)],
   ['Buongiorno a Tutti', tc(2, 0)],
   ['Meteo', tc(0, 4, 50, 12)],
@@ -29,7 +30,23 @@ const ENTRIES: SeedEntry[] = [
   ['Sport Replay', tc(0, 10)],
 ];
 
-/** Palinsesto dimostrativo di una giornata, dalle 06:00 alle 24:00 */
+/** Programmazione notturna, dalle 00:00 alle 05:55 circa: il canale trasmette 24 ore su 24 */
+const NIGHT: SeedEntry[] = [
+  ['Film della Notte', tc(1, 50)],
+  ['Repliche', tc(2, 0)],
+  ['Musica nella Notte', tc(2, 5)],
+];
+
+const shiftToDay = (entries: SeedEntry[], day: number): SeedEntry[] =>
+  entries.map(([title, duration, fixedStart]) => [
+    title,
+    duration,
+    fixedStart === undefined ? undefined : day * FRAMES_PER_DAY + fixedStart,
+  ]);
+
+const ENTRIES: SeedEntry[] = [...shiftToDay(DAYTIME, 0), ...NIGHT, ...shiftToDay(DAYTIME, 1)];
+
+/** Palinsesto dimostrativo di due giorni consecutivi, dalle 06:00 del primo alle 24:00 del secondo */
 export function createSeedPrograms(now: number = 0): Program[] {
   return ENTRIES.map(([title, duration, fixedStart], index) => ({
     id: `seed-${index + 1}`,

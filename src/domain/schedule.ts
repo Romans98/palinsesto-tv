@@ -4,10 +4,8 @@ import type { Program } from './types';
 /** Oltre questa durata un blocco pubblicitario viene segnalato come troppo lungo */
 export const MAX_AD_BREAK: Frames = 12 * FRAMES_PER_MINUTE;
 
-/** Limite che i programmi flottanti non dovrebbero superare: l'inizio di un'ancora o la fine della giornata */
-export type OverflowTarget =
-  | { kind: 'anchor'; programId: string; title: string }
-  | { kind: 'endOfDay' };
+/** Ancora il cui orario viene invaso dai programmi precedenti */
+export type OverflowTarget = { programId: string; title: string };
 
 /** Coinvolgimento di un programma in uno sforamento */
 export type Overflow = {
@@ -47,7 +45,7 @@ export type AdBreakRow = {
 export type ScheduleRow = ProgramRow | AdBreakRow;
 
 export type ScheduleIssues = {
-  /** Numero di limiti superati (ancore invase e fine della giornata), non di righe coinvolte */
+  /** Numero di ancore invase, non di righe coinvolte */
   overflows: number;
   longAdBreaks: number;
 };
@@ -59,15 +57,15 @@ export type Schedule = {
 
 /**
  * Calcola il palinsesto a partire dalla lista ordinata dei programmi.
+ * Il tempo è espresso in frame dalle 00:00 del primo giorno: il palinsesto può estendersi su più giorni.
  *
  * Regole:
- * - un flottante inizia dove finisce il programma precedente (il primo alle 00:00);
+ * - un flottante inizia dove finisce il programma precedente (il primo alle 00:00 del primo giorno);
  * - un'ancora inizia sempre al suo orario fisso, qualunque cosa la preceda;
  * - lo spazio libero prima di un'ancora diventa un blocco pubblicitario;
  * - se i programmi di un segmento (quelli tra due ancore) finiscono dopo l'inizio dell'ancora successiva,
  *   l'ancora segnala lo sforamento complessivo e ogni programma che supera il suo orario viene segnalato.
  *   L'ancora non si sposta, quindi ciò che viene dopo non è influenzato;
- * - lo stesso vale per la fine della giornata;
  * - lo spazio prima del primo programma è fuori palinsesto, non pubblicità.
  *
  * Si assume che le ancore compaiano nella lista in ordine crescente di orario.
@@ -90,7 +88,7 @@ export function computeSchedule(programs: readonly Program[]): Schedule {
         } else if (cursor > start) {
           incomingOverflow = cursor - start;
           overflows++;
-          markOverflow(segment, start, { kind: 'anchor', programId: program.id, title: program.title });
+          markOverflow(segment, start, { programId: program.id, title: program.title });
         }
       }
       segment = [];
@@ -112,12 +110,28 @@ export function computeSchedule(programs: readonly Program[]): Schedule {
     cursor = row.end;
   }
 
-  if (cursor !== null && cursor > FRAMES_PER_DAY) {
-    overflows++;
-    markOverflow(segment, FRAMES_PER_DAY, { kind: 'endOfDay' });
-  }
-
   return { rows, issues: { overflows, longAdBreaks: countLongAdBreaks(rows) } };
+}
+
+export type ScheduleDay = {
+  /** 0 = primo giorno del palinsesto */
+  index: number;
+  rows: ScheduleRow[];
+};
+
+/** Giorno del palinsesto (0 = primo) in cui cade un istante */
+export const dayIndexOf = (frames: Frames): number => Math.floor(frames / FRAMES_PER_DAY);
+
+/** Raggruppa le righe per giorno: ogni riga appartiene al giorno in cui inizia */
+export function groupByDay(rows: readonly ScheduleRow[]): ScheduleDay[] {
+  const days: ScheduleDay[] = [];
+  for (const row of rows) {
+    const index = dayIndexOf(row.start);
+    const current = days[days.length - 1];
+    if (current && current.index === index) current.rows.push(row);
+    else days.push({ index, rows: [row] });
+  }
+  return days;
 }
 
 function adBreak(anchorId: string, start: Frames, end: Frames): AdBreakRow {

@@ -1,6 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react';
 import { useAppServices } from '../app/services';
-import { computeSchedule, type ProgramRow } from '../domain/schedule';
+import { computeSchedule, dayIndexOf, type ProgramRow } from '../domain/schedule';
 import type { InsertionPoint } from './useAddProgramViewModel';
 import { useRemoteChangesFeedback } from './useRemoteChangesFeedback';
 
@@ -34,7 +34,11 @@ export function useScheduleViewModel() {
     currentUser,
     selectedId,
     selectedRow: programRows.find((row) => row.program.id === selectedId),
-    select: setSelectedId,
+    /** Clic su una riga: la seleziona, oppure la deseleziona se era già selezionata (non mentre se ne modifica la durata) */
+    toggleSelection: (programId: string) => {
+      if (programId === editingId) return;
+      setSelectedId((current) => (current === programId ? null : programId));
+    },
 
     highlightedIds: feedback.highlightedIds,
     notifications: feedback.notifications,
@@ -49,6 +53,8 @@ export function useScheduleViewModel() {
 
     isAdding,
     insertAfter,
+    /** Numero di giorni coperti dal palinsesto */
+    dayCount: programRows.length === 0 ? 1 : dayIndexOf(programRows[programRows.length - 1].start) + 1,
     startAdding: () => {
       setEditingId(null);
       setIsAdding(true);

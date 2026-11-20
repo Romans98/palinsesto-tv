@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { computeSchedule, type AdBreakRow, type ProgramRow, type ScheduleRow } from './schedule';
-import { FRAMES_PER_MINUTE, fromParts, type Frames } from './timecode';
+import { computeSchedule, groupByDay, type AdBreakRow, type ProgramRow, type ScheduleRow } from './schedule';
+import { FRAMES_PER_DAY, FRAMES_PER_MINUTE, fromParts, type Frames } from './timecode';
 import type { Program } from './types';
 
 // --- helper ---------------------------------------------------------------
@@ -114,7 +114,7 @@ describe('computeSchedule: sforamento e paratia', () => {
     const { rows } = computeSchedule(overflowing);
     expect(row(rows, 'quiz').overflow).toMatchObject({
       amount: min(2),
-      against: { kind: 'anchor', programId: 'tg', title: 'tg' },
+      against: { programId: 'tg', title: 'tg' },
     });
     expect(row(rows, 'tg').start).toBe(at(20));
     expect(adRows(rows)).toHaveLength(0);
@@ -142,9 +142,46 @@ describe('computeSchedule: sforamento e paratia', () => {
     expect(row(rows, 'tg').truncateTo).toBe(min(30));
   });
 
-  it('sforamento della fine della giornata', () => {
-    const { rows } = computeSchedule([anchor('notte', at(23, 30), min(45))]);
-    expect(row(rows, 'notte').overflow).toMatchObject({ amount: min(15), against: { kind: 'endOfDay' } });
+});
+
+describe('computeSchedule: più giorni', () => {
+  const day2 = (hours: number, minutes = 0) => FRAMES_PER_DAY + at(hours, minutes);
+
+  it('un programma che supera la mezzanotte non sfora: continua nel giorno successivo', () => {
+    const { rows, issues } = computeSchedule([anchor('notte', at(23, 30), min(80)), floating('film', min(100))]);
+    expect(row(rows, 'notte')).toMatchObject({ end: day2(0, 50), overflow: null });
+    expect(row(rows, 'film')).toMatchObject({ start: day2(0, 50), end: day2(2, 30), overflow: null });
+    expect(issues.overflows).toBe(0);
+  });
+
+  it("un'ancora del secondo giorno si comporta come quelle del primo", () => {
+    const programs = [anchor('notte', at(23, 30), min(20)), floating('film', min(360)), anchor('mattino', day2(6), min(30))];
+    // notte 23:30 → 23:50, film 23:50 → 05:50 del giorno 2, pubblicità fino alle 06:00
+    const { rows } = computeSchedule(programs);
+    expect(adRows(rows)[0]).toMatchObject({ start: day2(5, 50), end: day2(6), duration: min(10) });
+
+    // con il film fino alle 06:10 del giorno 2 l'ancora delle 06:00 viene invasa di 10 minuti
+    const overflowing = computeSchedule([programs[0], floating('film', min(380)), programs[2]]);
+    expect(row(overflowing.rows, 'film').overflow).toMatchObject({ amount: min(10) });
+    expect(row(overflowing.rows, 'mattino').incomingOverflow).toBe(min(10));
+  });
+});
+
+describe('groupByDay', () => {
+  it('divide le righe per giorno di inizio; un programma a cavallo della mezzanotte resta nel giorno in cui inizia', () => {
+    const { rows } = computeSchedule([
+      anchor('sera', at(22), min(60)),
+      floating('notte', min(90)), // 23:00 → 00:30 del giorno dopo
+      floating('alba', min(60)), // 00:30 → 01:30 del giorno dopo
+    ]);
+    const days = groupByDay(rows);
+    expect(days.map((d) => d.index)).toEqual([0, 1]);
+    expect(days[0].rows.map((r) => (r.kind === 'program' ? r.program.id : r.kind))).toEqual(['sera', 'notte']);
+    expect(days[1].rows.map((r) => (r.kind === 'program' ? r.program.id : r.kind))).toEqual(['alba']);
+  });
+
+  it('lista vuota: nessun giorno', () => {
+    expect(groupByDay([])).toEqual([]);
   });
 });
 
@@ -236,6 +273,7 @@ describe('computeSchedule: riepilogo', () => {
       anchor('tg', at(19, 30), min(30)),
       anchor('notte', at(23, 50), min(20)),
     ]);
-    expect(issues).toEqual({ overflows: 2, longAdBreaks: 2 });
+    // la pubblicità 18:20 → 19:00 e 20:00 → 23:50 è lunga; "notte" supera la mezzanotte senza sforare
+    expect(issues).toEqual({ overflows: 1, longAdBreaks: 2 });
   });
 });

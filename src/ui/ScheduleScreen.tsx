@@ -23,7 +23,7 @@ export function ScheduleScreen() {
             selectedId={vm.selectedId}
             highlightedIds={vm.highlightedIds}
             editingId={vm.editingId}
-            onSelect={vm.select}
+            onSelect={vm.toggleSelection}
             onStartEditing={vm.startEditing}
             onStopEditing={vm.stopEditing}
             onTruncate={vm.startTruncating}
@@ -33,7 +33,7 @@ export function ScheduleScreen() {
       </main>
       <SimulationPanel target={vm.selectedRow} />
       <Notifications notifications={vm.notifications} onDismiss={vm.dismissNotification} />
-      {vm.isAdding && <AddProgramDialog insertAfter={vm.insertAfter} onDone={vm.finishAdding} />}
+      {vm.isAdding && <AddProgramDialog insertAfter={vm.insertAfter} dayCount={vm.dayCount} onDone={vm.finishAdding} />}
       {vm.truncating && <TruncateDialog liveRow={vm.truncating.row} onClose={vm.finishTruncating} />}
       {vm.deleting && <DeleteDialog liveRow={vm.deleting.row} onClose={vm.finishDeleting} />}
     </div>

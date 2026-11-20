@@ -56,16 +56,25 @@
   background: var(--surface-selected);
 }
 
-/* Modifica recente di un altro utente: colore pieno, poi dissolvenza quando la classe viene rimossa */
-
-.row td {
-  transition: background-color 900ms ease-out;
-}
+/* Modifica recente di un altro utente: evidenziata per qualche secondo, senza animazioni */
 
 .remoteHighlight td,
 .remoteHighlight:hover td {
   background: var(--remote-highlight);
-  transition: none;
+}
+
+/* Intestazione di un giorno del palinsesto */
+
+.dayHeader td {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  /* colore delle ancore al 30% */
+  background: color-mix(in srgb, var(--anchor) 30%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--anchor) 45%, var(--surface));
 }
 
 /* Orari */
@@ -192,6 +201,14 @@
 }
 
 /* Sforamento */
+
+.nextDay {
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  vertical-align: super;
+  color: var(--danger);
+}
 
 .impossibleTime {
   color: var(--danger);

@@ -1,7 +1,8 @@
 import { useEffect, useRef, type MouseEvent } from 'react';
-import type { Overflow, OverflowTarget, ProgramRow as ProgramRowData } from '../domain/schedule';
+import type { Overflow, ProgramRow as ProgramRowData } from '../domain/schedule';
 import { formatTimecode } from '../domain/timecode';
 import { DurationEditor } from './DurationEditor';
+import { formatEnd, formatStart, type TimeOfDay } from './formatTimeOfDay';
 import { formatUpdatedAt, formatUpdatedAtFull } from './formatUpdatedAt';
 import { AlertIcon, LockIcon, TrashIcon } from './icons';
 import styles from './ScheduleTable.module.css';
@@ -19,13 +20,21 @@ type Props = {
   onDelete: () => void;
 };
 
-const targetLabel = (target: OverflowTarget) =>
-  target.kind === 'anchor' ? `«${target.title}»` : 'la fine della giornata';
+const overflowLabel = ({ against, amount, startsAfterLimit }: Overflow) =>
+  startsAfterLimit ? `Dopo l'inizio di «${against.title}»` : `Sfora «${against.title}» di ${formatTimecode(amount)}`;
 
-const overflowLabel = (overflow: Overflow) =>
-  overflow.startsAfterLimit
-    ? `Dopo l'inizio di ${targetLabel(overflow.against)}`
-    : `Sfora ${targetLabel(overflow.against)} di ${formatTimecode(overflow.amount)}`;
+function Time({ time }: { time: TimeOfDay }) {
+  return (
+    <>
+      {time.text}
+      {time.nextDay && (
+        <span className={styles.nextDay} title="Il giorno successivo">
+          +1
+        </span>
+      )}
+    </>
+  );
+}
 
 /** Esegue l'azione senza attivare anche la selezione della riga */
 const withoutSelecting = (action: () => void) => (event: MouseEvent) => {
@@ -72,7 +81,7 @@ export function ProgramRow({
             className={overflow?.startsAfterLimit ? styles.impossibleTime : undefined}
             title={overflow?.startsAfterLimit ? 'Orario non realizzabile' : undefined}
           >
-            {formatTimecode(row.start)}
+            <Time time={formatStart(row.start)} />
           </span>
         </span>
       </td>
@@ -90,7 +99,9 @@ export function ProgramRow({
           </button>
         )}
       </td>
-      <td className={styles.time}>{formatTimecode(row.end)}</td>
+      <td className={styles.time}>
+        <Time time={formatEnd(row.start, row.end)} />
+      </td>
       <td>
         <div className={styles.title}>
           <span className={styles.titleText}>{program.title}</span>
