@@ -1,0 +1,57 @@
+.stack {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.notification {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 380px;
+  padding: 10px 12px;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
+  pointer-events: auto;
+  animation: slide-in 160ms ease-out;
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.text {
+  flex: 1;
+}
+
+.close {
+  padding: 0 2px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--text);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

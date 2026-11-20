@@ -1,10 +1,12 @@
 import { useScheduleViewModel } from '../hooks/useScheduleViewModel';
 import { AddProgramDialog } from './AddProgramDialog';
 import { DeleteDialog } from './DeleteDialog';
+import { Notifications } from './Notifications';
 import { ScheduleHeader } from './ScheduleHeader';
 import styles from './ScheduleScreen.module.css';
 import { ScheduleTable } from './ScheduleTable';
 import { ScheduleToolbar } from './ScheduleToolbar';
+import { SimulationPanel } from './SimulationPanel';
 import { TruncateDialog } from './TruncateDialog';
 
 export function ScheduleScreen() {
@@ -19,6 +21,7 @@ export function ScheduleScreen() {
           <ScheduleTable
             rows={vm.rows}
             selectedId={vm.selectedId}
+            highlightedIds={vm.highlightedIds}
             editingId={vm.editingId}
             onSelect={vm.select}
             onStartEditing={vm.startEditing}
@@ -28,6 +31,8 @@ export function ScheduleScreen() {
           />
         </div>
       </main>
+      <SimulationPanel target={vm.selectedRow} />
+      <Notifications notifications={vm.notifications} onDismiss={vm.dismissNotification} />
       {vm.isAdding && <AddProgramDialog insertAfter={vm.insertAfter} onDone={vm.finishAdding} />}
       {vm.truncating && <TruncateDialog liveRow={vm.truncating.row} onClose={vm.finishTruncating} />}
       {vm.deleting && <DeleteDialog liveRow={vm.deleting.row} onClose={vm.finishDeleting} />}

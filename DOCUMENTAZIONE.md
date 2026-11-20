@@ -42,8 +42,8 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6e. Modifica della durata
   - [x] 6f. Aggiunta di un programma
   - [x] 6g. Gestione dei conflitti di modifica concorrente
-  - [ ] 6h. Feedback visivo quando i dati cambiano
-  - [ ] 6i. Pannello "Strumenti demo" (utente simulato e ritardo di rete)
+  - [x] 6h. Feedback visivo quando i dati cambiano
+  - [x] 6i. Pannello "Strumenti demo" (utente simulato)
 - [ ] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
 - [ ] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
 - [ ] **9. Preparazione del colloquio**: punti da raccontare e domande probabili
@@ -274,7 +274,7 @@ type Program = {
 
 - **Scelta**: due meccanismi che lavorano insieme.
   1. **Più tab dello stesso browser**: il "database" è il `localStorage` e l'evento `storage` avvisa le altre tab. Con due finestre affiancate si vedono le modifiche propagarsi in tempo reale.
-  2. **Pannello "Simula altro utente"**: un utente fittizio compie modifiche su richiesta, con un ritardo di rete simulato. Serve a riprodurre **apposta** conflitti e sforamenti, anche con una sola tab.
+  2. **Pannello "Simula altro utente"**: un utente fittizio compie modifiche su richiesta. Serve a riprodurre **apposta** conflitti e sforamenti, anche con una sola tab.
 - **Perché**: il primo rende il realismo, il secondo rende la demo controllabile.
 - **Limiti dichiarati**:
   - il `localStorage` non è transazionale tra le tab. Per una simulazione è accettabile, e il controllo di versione resta in un unico punto (il finto server);
@@ -283,12 +283,14 @@ type Program = {
 - **Dettagli concordati**:
   - ogni tab riceve un nome progressivo **"Utente Test N"**, condiviso tra le tab tramite un contatore nel `localStorage`. Il nome resta nella tab (`sessionStorage`), quindi non cambia ricaricando la pagina;
   - l'utente simulato agisce **solo quando si premono i pulsanti** del pannello, così la demo è controllabile e ripetibile;
-  - il ritardo di rete simulato è di **0,5 s**, modificabile dal pannello.
+  - **nessun ritardo di rete** simulato nell'app. Inizialmente era di 0,5 s, regolabile dal pannello; è stato tolto perché rallentava la demo senza aggiungere valore, dato che i conflitti si mostrano già con il pannello e con due tab. Il server simulato conserva l'opzione `latencyMs`, usata in un test per riprodurre la corsa tra un client lento e uno veloce.
 - **Struttura del codice**:
   - `domain/commands.ts`: le regole dei comandi come funzioni pure (stato + comando → nuovo stato + esito): controllo di versione, validazione, posizione di inserimento, sovrapposizione tra ancore. È la logica che un backend reale eseguirebbe lato server;
-  - `data/FakeScheduleServer.ts`: solo il "trasporto" (storage, ritardo, notifiche). Lo storage e la sorgente delle notifiche esterne sono **iniettati**, quindi nei test si simulano due tab senza browser;
+  - `data/FakeScheduleServer.ts`: solo il "trasporto" (storage, notifiche, ritardo opzionale). Lo storage e la sorgente delle notifiche esterne sono **iniettati**, quindi nei test si simulano due tab senza browser;
   - `data/SimulatedUser.ts`: usa lo stesso `ScheduleRepository` di qualunque client, senza scorciatoie. Se lavora su dati non aggiornati riceve anche lui un conflitto.
-- **Il ritardo di rete viene applicato prima di eseguire il comando**: il comando viene valutato sullo stato presente *all'arrivo* al "server", come nella realtà. È proprio questo a far nascere i conflitti durante la demo.
+- **Il ritardo di rete, quando è attivo, viene applicato prima di eseguire il comando**: il comando viene valutato sullo stato presente *all'arrivo* al "server", come nella realtà. Un test lo verifica con un client lento e uno veloce.
+- **Pannello "Strumenti demo"**, richiudibile, in fondo alla pagina e volutamente separato dall'interfaccia "vera" (bordo tratteggiato). L'utente simulato agisce sulla **riga selezionata**: allunga o accorcia di 2 minuti, aggiunge una promo dopo, elimina. Il pannello mostra l'esito dell'ultima azione, conflitti compresi.
+  - **I pulsanti del pannello non rubano il focus**: si può tenere aperta la modifica di una durata e far agire l'utente simulato sullo stesso programma. Così l'avviso immediato e il dialogo di conflitto si mostrano con una sola tab, al colloquio e nel video.
 - **Evoluzione**: un vero backend in tempo reale (vedi "Come si può migliorare").
 
 ### D-013: dependency injection e ViewModel
@@ -346,7 +348,7 @@ src/
 └──────────────┴──────────────┴──────────────┴─────────────────────────────────┘
 ┌ Strumenti demo (richiudibile) ───────────────────────────────────────────────┐
 │ Simula Utente Test 2: [Allunga un programma] [Modifica il programma che sto   │
-│ modificando] [Aggiungi un programma]   Ritardo di rete: [0,5 s ▾]            │
+│ modificando] [Aggiungi un programma]                                         │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -366,6 +368,18 @@ src/
 - **Finestra di conflitto**: mostra i tre valori (quando ho iniziato / il mio / quello dell'altro utente, con l'orario della sua modifica). L'azione predefinita, col focus, è "Usa il mio", perché è quella che l'utente stava facendo. **Esc equivale a "Tieni il suo"**: chiudere senza scegliere non deve mai sovrascrivere il lavoro di un altro.
 - **Finestre modali**: un unico componente `Modal`, basato sull'elemento `<dialog>` nativo, condiviso da aggiunta, conflitto e troncamento. Viene montato nel `body` con un *portal* di React. La finestra di conflitto nasce dentro la cella della durata, e senza portal ne ereditava gli stili: il testo non andava a capo e la finestra scorreva in orizzontale.
 - **Perché sia l'avviso immediato sia il dialogo**: l'avviso **previene** la sorpresa ("sto lavorando su un dato vecchio"). Il dialogo è la **rete di sicurezza** quando l'utente salva comunque, ed è l'unico punto dove la decisione viene davvero applicata.
+
+### D-015: feedback sulle modifiche degli altri utenti
+
+- **Contesto**: la traccia chiede cosa vede l'utente quando i dati cambiano mentre li sta guardando.
+- **Rilevamento**: una funzione pura, `detectRemoteChanges(prima, dopo, utente)`, confronta due snapshot e trova i programmi modificati (versione cresciuta), aggiunti o eliminati da altri. Non servono log di eventi né infrastruttura aggiuntiva.
+- **Cosa vede l'utente**:
+  - la **riga modificata** si colora di azzurro e torna normale con una dissolvenza dopo circa 2,5 s. Una nuova modifica alla stessa riga prolunga l'evidenziazione;
+  - una **notifica** in basso a destra ("Utente Test 2 ha modificato «Quiz Show»"). È indispensabile per le **eliminazioni**, che non hanno più una riga da evidenziare. Se l'eliminazione riguarda il programma che sto modificando, la notifica lo dice esplicitamente;
+  - se arrivano più modifiche insieme, un'**unica notifica riassuntiva** ("Palinsesto aggiornato da altri utenti: N modifiche"), invece di una raffica;
+  - le colonne "Modificato da / alle" restano come traccia permanente di chi ha toccato cosa.
+- **Cosa non succede, di proposito**: niente scroll automatico verso le modifiche altrui e niente riordino sotto il cursore. L'utente non perde il punto in cui stava lavorando.
+- **Non sono segnalate**: le mie modifiche (le conosco già), le mie eliminazioni e il ritorno dei dati demo alla versione iniziale.
 
 ### D-012: stile visivo (rivisto dopo la prima prova)
 
@@ -423,6 +437,8 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Correzione: finestra di conflitto con scorrimento orizzontale | Ereditava `white-space: nowrap` dalla cella della tabella. Risolto montando `Modal` nel `body` con un portal e fermando la propagazione dei clic, che nei portal React risalgono comunque l'albero dei componenti |
 | 2026-11-20 | Revisione di D-003: sforamento a livello di segmento | Bug segnalato provando l'app: con sforamenti grandi i programmi spinti oltre l'ancora non erano segnalati. `computeSchedule` ora segnala tutti i programmi coinvolti e l'ancora riporta il totale; 8 nuovi test sul caso concreto |
 | 2026-11-20 | D-014: eliminazione di un programma | Nuovo comando con controllo di versione, conferma con l'effetto sul palinsesto; 92 test in totale |
+| 2026-11-20 | 6h + 6i. Feedback sulle modifiche altrui (D-015) e pannello "Strumenti demo" (D-010) | `detectRemoteChanges` con 7 test, 99 test in totale. Il lint ha segnalato una dipendenza mancante in un effetto: risolta leggendo i valori di contesto da un ref invece di silenziare l'avviso |
+| 2026-11-20 | Rimosso il ritardo di rete simulato e il relativo selettore del pannello | Rallentava la demo senza aggiungere valore; l'opzione resta nel server per i test |
 
 ---
 

@@ -2,6 +2,7 @@ import { useMemo, useState, useSyncExternalStore } from 'react';
 import { useAppServices } from '../app/services';
 import { computeSchedule, type ProgramRow } from '../domain/schedule';
 import type { InsertionPoint } from './useAddProgramViewModel';
+import { useRemoteChangesFeedback } from './useRemoteChangesFeedback';
 
 /** ViewModel della schermata del palinsesto */
 export function useScheduleViewModel() {
@@ -18,6 +19,8 @@ export function useScheduleViewModel() {
   const [truncatingId, setTruncatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const feedback = useRemoteChangesFeedback(programs, currentUser, deletingId, editingId);
+
   // Un nuovo flottante va dopo la riga selezionata; senza selezione, in coda al palinsesto
   const programRows = schedule.rows.filter((row): row is ProgramRow => row.kind === 'program');
   const anchorRow = programRows.find((row) => row.program.id === selectedId) ?? programRows.at(-1);
@@ -30,7 +33,12 @@ export function useScheduleViewModel() {
     issues: schedule.issues,
     currentUser,
     selectedId,
+    selectedRow: programRows.find((row) => row.program.id === selectedId),
     select: setSelectedId,
+
+    highlightedIds: feedback.highlightedIds,
+    notifications: feedback.notifications,
+    dismissNotification: feedback.dismissNotification,
 
     editingId,
     startEditing: (programId: string) => {

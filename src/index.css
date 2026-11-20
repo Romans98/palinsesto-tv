@@ -23,6 +23,7 @@
   --warning-bg: #fff5e0;
   --success: #2e7d32;
   --success-bg: #e8f5e9;
+  --remote-highlight: #d6e6ff; /* modifiche recenti di altri utenti */
 
   font-family: var(--font-sans);
   font-size: 13px;

@@ -6,6 +6,7 @@ import styles from './ScheduleTable.module.css';
 type Props = {
   rows: ScheduleRow[];
   selectedId: string | null;
+  highlightedIds: ReadonlyMap<string, number>;
   editingId: string | null;
   onSelect: (programId: string) => void;
   onStartEditing: (programId: string) => void;
@@ -17,6 +18,7 @@ type Props = {
 export function ScheduleTable({
   rows,
   selectedId,
+  highlightedIds,
   editingId,
   onSelect,
   onStartEditing,
@@ -55,6 +57,7 @@ export function ScheduleTable({
               key={row.program.id}
               row={row}
               isSelected={row.program.id === selectedId}
+              isHighlighted={highlightedIds.has(row.program.id)}
               isEditing={row.program.id === editingId}
               onSelect={() => onSelect(row.program.id)}
               onStartEditing={() => onStartEditing(row.program.id)}

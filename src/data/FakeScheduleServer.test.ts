@@ -16,7 +16,7 @@ function createSharedBrowser() {
   const data = new Map<string, string>();
   const tabListeners = new Set<() => void>();
 
-  const openTab = () => {
+  const openTab = (latencyMs = 0) => {
     let ownListener: (() => void) | null = null;
     const storage: StorageLike = {
       getItem: (key) => data.get(key) ?? null,
@@ -31,7 +31,7 @@ function createSharedBrowser() {
       tabListeners.add(onChange);
       return () => tabListeners.delete(onChange);
     };
-    return new FakeScheduleServer({ storage, externalChanges, latencyMs: 0, generateId: () => 'new-id', now: () => NOW });
+    return new FakeScheduleServer({ storage, externalChanges, latencyMs, generateId: () => 'new-id', now: () => NOW });
   };
 
   return { openTab };
@@ -105,9 +105,8 @@ describe('FakeScheduleServer', () => {
   it('il comando viene valutato sullo stato al termine del ritardo di rete', async () => {
     vi.useFakeTimers();
     const browser = createSharedBrowser();
-    const slowTab = browser.openTab();
+    const slowTab = browser.openTab(1000);
     const fastTab = browser.openTab();
-    slowTab.setLatency(1000);
 
     const slow = slowTab.updateDuration({ programId: 'seed-2', durationFrames: min(100), expectedVersion: 1, user: 'lento' });
     const fast = fastTab.updateDuration({ programId: 'seed-2', durationFrames: min(110), expectedVersion: 1, user: 'veloce' });

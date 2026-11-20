@@ -56,6 +56,18 @@
   background: var(--surface-selected);
 }
 
+/* Modifica recente di un altro utente: colore pieno, poi dissolvenza quando la classe viene rimossa */
+
+.row td {
+  transition: background-color 900ms ease-out;
+}
+
+.remoteHighlight td,
+.remoteHighlight:hover td {
+  background: var(--remote-highlight);
+  transition: none;
+}
+
 /* Orari */
 
 .time {

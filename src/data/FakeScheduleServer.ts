@@ -24,6 +24,7 @@ export type ExternalChanges = (onChange: () => void) => () => void;
 export type FakeScheduleServerOptions = {
   storage: StorageLike;
   externalChanges: ExternalChanges;
+  /** Ritardo di rete simulato (di default nessuno) */
   latencyMs?: number;
   generateId?: () => string;
   now?: () => number;
@@ -41,13 +42,13 @@ export class FakeScheduleServer implements ScheduleRepository {
   private readonly generateId: () => string;
   private readonly now: () => number;
   private readonly listeners = new Set<() => void>();
-  private latencyMs: number;
+  private readonly latencyMs: number;
   private raw: string | null = null;
   private snapshot: readonly Program[] = [];
 
   constructor(options: FakeScheduleServerOptions) {
     this.storage = options.storage;
-    this.latencyMs = options.latencyMs ?? 500;
+    this.latencyMs = options.latencyMs ?? 0;
     this.generateId = options.generateId ?? (() => crypto.randomUUID());
     this.now = options.now ?? Date.now;
 
@@ -66,14 +67,6 @@ export class FakeScheduleServer implements ScheduleRepository {
   };
 
   getSnapshot = (): readonly Program[] => this.snapshot;
-
-  getLatency(): number {
-    return this.latencyMs;
-  }
-
-  setLatency(ms: number): void {
-    this.latencyMs = ms;
-  }
 
   async updateDuration(command: UpdateDurationCommand): Promise<UpdateResult> {
     await this.networkDelay();

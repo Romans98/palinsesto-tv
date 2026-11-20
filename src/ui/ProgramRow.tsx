@@ -9,6 +9,8 @@ import styles from './ScheduleTable.module.css';
 type Props = {
   row: ProgramRowData;
   isSelected: boolean;
+  /** Modificato da poco da un altro utente */
+  isHighlighted: boolean;
   isEditing: boolean;
   onSelect: () => void;
   onStartEditing: () => void;
@@ -34,6 +36,7 @@ const withoutSelecting = (action: () => void) => (event: MouseEvent) => {
 export function ProgramRow({
   row,
   isSelected,
+  isHighlighted,
   isEditing,
   onSelect,
   onStartEditing,
@@ -55,6 +58,7 @@ export function ProgramRow({
     anchor ? styles.anchor : '',
     overflow || row.incomingOverflow ? styles.overflow : '',
     isSelected ? styles.selected : '',
+    isHighlighted ? styles.remoteHighlight : '',
   ].join(' ');
 
   return (

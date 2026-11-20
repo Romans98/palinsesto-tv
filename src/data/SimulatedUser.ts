@@ -1,5 +1,5 @@
 import type { Frames } from '../domain/timecode';
-import type { AddResult, ScheduleRepository, UpdateResult } from './ScheduleRepository';
+import type { AddResult, DeleteResult, ScheduleRepository, UpdateResult } from './ScheduleRepository';
 
 /**
  * Un altro utente simulato.
@@ -35,5 +35,12 @@ export class SimulatedUser {
       placement: { kind: 'after', programId: afterProgramId },
       user: this.name,
     });
+  }
+
+  /** Elimina un programma partendo dalla versione che vede in questo momento */
+  async deleteProgram(programId: string): Promise<DeleteResult> {
+    const program = this.repository.getSnapshot().find((p) => p.id === programId);
+    if (!program) return { status: 'notFound' };
+    return this.repository.deleteProgram({ programId, expectedVersion: program.version, user: this.name });
   }
 }
