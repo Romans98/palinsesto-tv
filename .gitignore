@@ -1,0 +1,14 @@
+# Dipendenze e build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Log
+*.log
+
+# Sistema / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
