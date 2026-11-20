@@ -1,0 +1,35 @@
+.values {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--border-subtle);
+}
+
+.values th,
+.values td {
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.values th {
+  white-space: nowrap;
+  font-weight: 500;
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.values td {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.highlight td,
+.highlight th {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.values .target {
+  font-variant-numeric: normal;
+  color: var(--text-muted);
+}

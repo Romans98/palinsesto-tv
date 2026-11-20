@@ -64,6 +64,14 @@ export const PlusIcon = (props: IconProps) => (
   </Icon>
 );
 
+export const TrashIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M2.5 4.5h11" />
+    <path d="M6 4.5V3h4v1.5" />
+    <path d="M4 4.5l.7 8.5h6.6l.7-8.5" />
+  </Icon>
+);
+
 export const UserIcon = (props: IconProps) => (
   <Icon {...props}>
     <circle cx="8" cy="5.5" r="2.5" />

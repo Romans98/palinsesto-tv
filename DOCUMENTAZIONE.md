@@ -41,8 +41,9 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6d. Lista dei programmi
   - [x] 6e. Modifica della durata
   - [x] 6f. Aggiunta di un programma
-  - [ ] 6g. Gestione dei conflitti di modifica concorrente
+  - [x] 6g. Gestione dei conflitti di modifica concorrente
   - [ ] 6h. Feedback visivo quando i dati cambiano
+  - [ ] 6i. Pannello "Strumenti demo" (utente simulato e ritardo di rete)
 - [ ] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
 - [ ] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
 - [ ] **9. Preparazione del colloquio**: punti da raccontare e domande probabili
@@ -74,6 +75,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 | RF6 | Ricevere in tempo reale le modifiche fatte dagli altri utenti |
 | RF7 | Gestire il caso in cui due utenti modificano lo stesso programma |
 | RF8 | Far capire all'utente cosa è cambiato, senza disorientarlo |
+| RF9 | Eliminare un programma (aggiunto in corso d'opera, vedi D-014) |
 
 ### 3.3 Requisiti non funzionali
 
@@ -89,7 +91,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - I dati sono simulati: un finto backend nel browser e alcuni "altri utenti" simulati.
 - Non c'è autenticazione: ogni tab riceve un nome utente progressivo ("Utente Test 1", "Utente Test 2", …).
 - La pubblicità **non viene salvata**: si ricava ogni volta dagli orari, così non può diventare incoerente con i programmi. In compenso è **visibile**, come riga dedicata con la sua durata.
-- Fuori ambito: cancellare e riordinare i programmi, più canali o giorni, autenticazione, persistenza reale, annulla/ripeti, versione mobile.
+- Fuori ambito: riordinare i programmi, più canali o giorni, autenticazione, persistenza reale, annulla/ripeti, versione mobile.
 
 ### 3.5 Domande aperte (si chiudono al passo 2)
 
@@ -127,8 +129,16 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 - **Accorciamento**:
   - *Alternative*: (simmetrico) i flottanti successivi si anticipano e la pubblicità si accumula subito prima dell'ancora; (asimmetrico) i successivi restano fermi e la pubblicità compare subito dopo il programma accorciato.
   - *Scelta*: **simmetrico**. È la stessa regola dell'allungamento, applicata al contrario. L'asimmetrico richiederebbe di salvare gli orari dei flottanti e quindi una seconda regola.
+- **Revisione dopo una prova: lo sforamento è un problema dell'ancora**:
+  - *Problema emerso*: allungando molto un programma (Talk Show + 3 ore), diversi flottanti finivano **interamente** dopo l'ancora delle 20:00. Solo l'ultimo era segnalato, gli altri sembravano normali pur avendo orari impossibili (es. 22:05 sopra un TG delle 20:00), e la causa non era evidente.
+  - *Alternative valutate*: (A) rifiutare le modifiche che spingono programmi interi oltre l'ancora. Non basta: due modifiche diverse di due utenti, valide da sole, possono produrlo insieme, quindi la visualizzazione andava sistemata comunque. (B) Spostare automaticamente dopo l'ancora i programmi che non ci stanno. Riordina programmi che nessuno ha toccato, a cascata, ed è sorprendente e difficile da annullare. (C) Rappresentare lo sforamento a livello di **segmento** (i programmi tra due ancore).
+  - *Scelta*: **C**.
+    - L'**ancora** riporta lo sforamento complessivo ("I programmi precedenti sforano di 02:54:30:00"): è lì che il problema esiste, perché è lei a non poter andare in onda.
+    - **Ogni programma coinvolto** è segnalato. Quello che attraversa l'orario mostra "Sfora … di …". Quelli che iniziano dopo hanno l'orario di inizio barrato e "Dopo l'inizio di …".
+    - Il riepilogo conta i **limiti superati**, non le righe.
+    - "Tronca" resta sull'ultimo programma. Quando non basta, il tooltip indica quanto bisogna accorciare in totale.
 - **Come si risolve uno sforamento**:
-  1. **Modificare a mano la durata** di uno o più flottanti tra le due ancore. Usa la stessa azione già prevista, quindi non serve codice in più.
+  1. **Modificare a mano la durata** di uno o più flottanti tra le due ancore, oppure **eliminarne** qualcuno (D-014).
   2. **Azione rapida "Tronca all'ancora"**, solo sull'ultimo flottante prima dell'ancora sforata: imposta la durata in modo che finisca esattamente all'inizio dell'ancora.
      - Non è una nuova operazione di dominio. È una normale modifica della durata con un valore calcolato, e quindi passa dallo stesso blocco ottimistico (D-004).
      - Chiede una **conferma esplicita** con la durata prima e dopo, perché nella realtà troncare un programma significa tagliarne il contenuto.
@@ -137,7 +147,8 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
     - un'**ancora** che sfora l'ancora successiva è segnalata e troncabile come un flottante: troncarla ne cambia la durata, non l'orario di inizio, che resta fisso. "Tronca" vale quindi per l'ultimo *programma* prima dell'ancora, non solo per l'ultimo flottante;
     - superare la **fine della giornata** (24:00) è uno sforamento come gli altri;
     - lo spazio **prima del primo programma** è fuori palinsesto, non pubblicità. Altrimenti un palinsesto che parte alle 06:00 mostrerebbe 6 ore di "pubblicità".
-  - *Lasciato per strada*: altre risoluzioni possibili, come cancellare un programma, spostare un flottante dopo l'ancora o trasformare l'ancora in flottante. Richiedono operazioni fuori ambito.
+  - **Concorrenza anche su "Tronca"**: la proposta (durata attuale e nuova) viene **fissata all'apertura** della conferma insieme alla versione del programma. Se nel frattempo qualcuno modifica quel programma, la conferma si blocca e lo segnala invece di applicare un calcolo fatto su dati vecchi. Se la modifica altrui arriva proprio mentre si conferma, il server risponde con un conflitto, come per ogni altra modifica.
+  - *Lasciato per strada*: altre risoluzioni possibili, come spostare un flottante dopo l'ancora o trasformare l'ancora in flottante. Richiedono operazioni fuori ambito (riordino, modifica del tipo).
 
 ### D-004: modifiche concorrenti sullo stesso programma
 
@@ -147,6 +158,16 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 - **Scelta**: **B, blocco ottimistico**. Ogni programma ha una `version`. Il salvataggio indica la versione su cui l'utente stava lavorando, e se nel frattempo è cambiata il backend lo rifiuta. La UI mostra entrambi i valori e lascia scegliere ("Tieni la tua / Usa la sua").
 - **Perché non le altre**: (A) fa perdere una modifica senza che nessuno se ne accorga. (C) rischia righe bloccate per sempre, per esempio se qualcuno chiude il browser. (D) è eccessivo per un singolo campo numerico.
 - **Caso sottile**: due utenti allungano due programmi **diversi**. Ogni modifica è valida da sola, ma insieme sforano un'ancora. Non è un conflitto sui dati, perché gli orari sono calcolati. Si vede come sforamento (D-003) e nessuna modifica va persa.
+
+### D-014: eliminazione di un programma (aggiunta in corso d'opera)
+
+- **Contesto**: inizialmente era fuori ambito. È stata aggiunta su richiesta, dopo aver visto che con sforamenti grandi accorciare le durate non sempre basta.
+- **Scelta**: un nuovo comando `applyDeleteProgram` con lo **stesso controllo di versione** della modifica. Eliminare un programma che qualcun altro ha appena cambiato, senza averlo visto, è un conflitto: il server lo rifiuta.
+- **Interfaccia**: un'icona cestino in fondo a ogni riga, sempre visibile (nascosta fino al passaggio del mouse risultava poco scopribile), e una conferma che spiega l'effetto:
+  - per un flottante, i successivi si anticipano e la pubblicità prima dell'ancora aumenta;
+  - per un'ancora, i programmi che la seguono ripartono dalla fine del programma precedente.
+- **Concorrenza**: come per "Tronca", la richiesta viene fissata all'apertura della conferma. Se nel frattempo il programma viene modificato o eliminato da un altro, la conferma si blocca e lo segnala.
+- **Lasciato per strada**: annullare l'eliminazione (undo) e un cestino da cui recuperare i programmi.
 
 ### D-005: limiti di durata
 
@@ -342,6 +363,8 @@ src/
 | Dialogo di conflitto (D-004) | Mostra originale / il mio valore / quello dell'altro utente. Pulsanti: [Usa il mio valore], che riprova sulla versione nuova, e [Tieni il suo] |
 | Aggiungere un programma | Finestra modale con titolo, durata e tipo (flottante dopo la riga selezionata / orario fisso con inizio) |
 
+- **Finestra di conflitto**: mostra i tre valori (quando ho iniziato / il mio / quello dell'altro utente, con l'orario della sua modifica). L'azione predefinita, col focus, è "Usa il mio", perché è quella che l'utente stava facendo. **Esc equivale a "Tieni il suo"**: chiudere senza scegliere non deve mai sovrascrivere il lavoro di un altro.
+- **Finestre modali**: un unico componente `Modal`, basato sull'elemento `<dialog>` nativo, condiviso da aggiunta, conflitto e troncamento. Viene montato nel `body` con un *portal* di React. La finestra di conflitto nasce dentro la cella della durata, e senza portal ne ereditava gli stili: il testo non andava a capo e la finestra scorreva in orizzontale.
 - **Perché sia l'avviso immediato sia il dialogo**: l'avviso **previene** la sorpresa ("sto lavorando su un dato vecchio"). Il dialogo è la **rete di sicurezza** quando l'utente salva comunque, ed è l'unico punto dove la decisione viene davvero applicata.
 
 ### D-012: stile visivo (rivisto dopo la prima prova)
@@ -396,6 +419,10 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Revisione dopo la prima prova | Interfaccia rifatta in stile gestionale chiaro (D-012), timecode da sinistra verso destra e chiusura dell'editor alla perdita del focus (D-013). Corretto un bug: uscendo dal campo l'editor restava aperto ma non rispondeva più a Invio ed Esc |
 | 2026-11-20 | Autore e orario dell'ultima modifica, in due colonne separate | Nuovo campo `updatedAt`, assegnato dal server simulato (D-012) |
 | 2026-11-20 | 6f. Aggiunta di un programma: `AddProgramDialog` + `useAddProgramViewModel` | Riusa `applyAddProgram` (già testato) e il campo timecode. Dettagli in D-007 |
+| 2026-11-20 | 6g. Concorrenza nella UI: avviso immediato, finestra di conflitto, "Tronca" con conferma, componente `Modal` comune | Il pannello demo per provocare conflitti con una sola tab diventa il passo 6i |
+| 2026-11-20 | Correzione: finestra di conflitto con scorrimento orizzontale | Ereditava `white-space: nowrap` dalla cella della tabella. Risolto montando `Modal` nel `body` con un portal e fermando la propagazione dei clic, che nei portal React risalgono comunque l'albero dei componenti |
+| 2026-11-20 | Revisione di D-003: sforamento a livello di segmento | Bug segnalato provando l'app: con sforamenti grandi i programmi spinti oltre l'ancora non erano segnalati. `computeSchedule` ora segnala tutti i programmi coinvolti e l'ancora riporta il totale; 8 nuovi test sul caso concreto |
+| 2026-11-20 | D-014: eliminazione di un programma | Nuovo comando con controllo di versione, conferma con l'effetto sul palinsesto; 92 test in totale |
 
 ---
 
@@ -414,6 +441,7 @@ ScheduleScreen                 ← useScheduleViewModel
 
 - Autenticazione e permessi (ruoli diversi: chi può spostare un programma a orario fisso?)
 - Multiutente reale tra dispositivi diversi: un backend in tempo reale (es. Supabase o Firebase Realtime, oppure un'API con WebSocket) che sostituisce `FakeScheduleServer` dietro la stessa interfaccia `ScheduleRepository`
+- **Anteprima nell'editor della durata**: prima di premere Invio, mostrare l'effetto della modifica (es. "farà sforare il TG di 02:54:30:00"). Previene gli sforamenti invece di segnalarli dopo.
 - Barra temporale della giornata sopra la tabella (ancore, pubblicità e sforamenti visibili a colpo d'occhio). _Da fare solo se avanza tempo._
 - Indicatore di presenza ("Utente Test 2 sta modificando…") per prevenire i conflitti invece di limitarsi a risolverli
 - _…altre proposte durante lo sviluppo_

@@ -118,6 +118,24 @@ describe('FakeScheduleServer', () => {
     vi.useRealTimers();
   });
 
+  it("un'eliminazione arriva anche all'altra tab", async () => {
+    const browser = createSharedBrowser();
+    const tab1 = browser.openTab();
+    const tab2 = browser.openTab();
+    await tab1.deleteProgram({ programId: 'seed-2', expectedVersion: 1, user: 'Utente Test 1' });
+    expect(tab2.getSnapshot().some((p) => p.id === 'seed-2')).toBe(false);
+  });
+
+  it('non si elimina un programma modificato da un altro nel frattempo', async () => {
+    const browser = createSharedBrowser();
+    const tab1 = browser.openTab();
+    const tab2 = browser.openTab();
+    await tab1.updateDuration({ programId: 'seed-2', durationFrames: min(100), expectedVersion: 1, user: '1' });
+    const result = await tab2.deleteProgram({ programId: 'seed-2', expectedVersion: 1, user: '2' });
+    expect(result.status).toBe('conflict');
+    expect(tab2.getSnapshot().some((p) => p.id === 'seed-2')).toBe(true);
+  });
+
   it('reset ripristina i dati demo', async () => {
     const server = createSharedBrowser().openTab();
     await server.updateDuration({ programId: 'seed-2', durationFrames: min(100), expectedVersion: 1, user: 'u' });

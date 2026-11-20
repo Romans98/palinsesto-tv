@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAddProgram, applyUpdateDuration as applyUpdate } from './commands';
+import { applyAddProgram, applyDeleteProgram, applyUpdateDuration as applyUpdate } from './commands';
 import { computeSchedule } from './schedule';
 import { FRAMES_PER_DAY, FRAMES_PER_MINUTE, fromParts, type Frames } from './timecode';
 import type { Program } from './types';
@@ -154,5 +154,36 @@ describe('applyAddProgram', () => {
 
   it('elimina gli spazi superflui dal titolo', () => {
     expect(add({ kind: 'after', programId: null }, min(10), '  Promo  ').result).toMatchObject({ program: { title: 'Promo' } });
+  });
+});
+
+describe('applyDeleteProgram', () => {
+  const programs = [floating('a', min(30)), floating('b', min(45), 2), anchor('tg', at(20), min(30))];
+
+  it('con la versione corretta elimina il programma', () => {
+    const { programs: next, result } = applyDeleteProgram(programs, { programId: 'b', expectedVersion: 2, user: 'u' });
+    expect(result).toEqual({ status: 'ok' });
+    expect(ids(next)).toEqual(['a', 'tg']);
+  });
+
+  it('i flottanti successivi si anticipano', () => {
+    const before = applyDeleteProgram(
+      [floating('a', min(30)), floating('b', min(45)), floating('c', min(10))],
+      { programId: 'b', expectedVersion: 1, user: 'u' },
+    );
+    const c = computeSchedule(before.programs).rows.find((r) => r.kind === 'program' && r.program.id === 'c');
+    expect(c).toMatchObject({ start: min(30) });
+  });
+
+  it('se il programma è stato modificato nel frattempo restituisce un conflitto e non elimina', () => {
+    const { programs: next, result } = applyDeleteProgram(programs, { programId: 'b', expectedVersion: 1, user: 'u' });
+    expect(result).toEqual({ status: 'conflict', current: programs[1] });
+    expect(next).toEqual(programs);
+  });
+
+  it('programma già eliminato', () => {
+    expect(applyDeleteProgram(programs, { programId: 'x', expectedVersion: 1, user: 'u' }).result).toEqual({
+      status: 'notFound',
+    });
   });
 });

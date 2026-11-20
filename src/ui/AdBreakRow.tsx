@@ -28,6 +28,7 @@ export function AdBreakRow({ row }: { row: AdBreakRowData }) {
       </td>
       <td />
       <td />
+      <td />
     </tr>
   );
 }

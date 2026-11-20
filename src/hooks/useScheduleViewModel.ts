@@ -15,6 +15,8 @@ export function useScheduleViewModel() {
   // Una sola riga alla volta può essere in modifica
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [truncatingId, setTruncatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Un nuovo flottante va dopo la riga selezionata; senza selezione, in coda al palinsesto
   const programRows = schedule.rows.filter((row): row is ProgramRow => row.kind === 'program');
@@ -47,6 +49,27 @@ export function useScheduleViewModel() {
     finishAdding: (createdId: string | null) => {
       setIsAdding(false);
       if (createdId) setSelectedId(createdId);
+    },
+
+    /** Riga del programma da troncare, aggiornata in tempo reale mentre la conferma è aperta */
+    truncating: truncatingId === null ? null : { row: programRows.find((row) => row.program.id === truncatingId) },
+    startTruncating: (programId: string) => {
+      setEditingId(null);
+      setSelectedId(programId);
+      setTruncatingId(programId);
+    },
+    finishTruncating: () => setTruncatingId(null),
+
+    /** Riga del programma da eliminare, aggiornata in tempo reale mentre la conferma è aperta */
+    deleting: deletingId === null ? null : { row: programRows.find((row) => row.program.id === deletingId) },
+    startDeleting: (programId: string) => {
+      setEditingId(null);
+      setSelectedId(programId);
+      setDeletingId(programId);
+    },
+    finishDeleting: (deleted: boolean) => {
+      setDeletingId(null);
+      if (deleted) setSelectedId(null);
     },
 
     resetDemo: () => {

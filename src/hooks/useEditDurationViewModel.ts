@@ -68,10 +68,12 @@ export function useEditDurationViewModel(program: Program, onClose: () => void) 
         setStatus('conflict');
         return;
       case 'invalid':
+        setConflict(null);
         setSubmitError(result.error);
         setStatus('editing');
         return;
       case 'notFound':
+        setConflict(null);
         setSubmitError('Il programma non esiste più');
         setStatus('editing');
         return;

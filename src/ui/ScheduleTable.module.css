@@ -17,6 +17,10 @@
   width: 120px;
 }
 
+.colActions {
+  width: 44px;
+}
+
 .table th {
   position: sticky;
   top: 0;
@@ -149,7 +153,59 @@
   background: var(--warning-bg);
 }
 
+/* Azioni di riga */
+
+.actions {
+  text-align: center;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
 /* Sforamento */
+
+.impossibleTime {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+
+.truncateButton {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--danger);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.truncateButton:hover:not(:disabled) {
+  background: var(--danger-bg);
+}
+
+.truncateButton:disabled {
+  color: var(--text-faint);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
 
 .overflow td {
   background: #fff7f7;

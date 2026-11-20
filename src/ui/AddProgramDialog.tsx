@@ -1,7 +1,9 @@
-import { useEffect, useRef, type FormEvent } from 'react';
+import type { FormEvent } from 'react';
 import { formatTimecode } from '../domain/timecode';
 import { useAddProgramViewModel, type InsertionPoint } from '../hooks/useAddProgramViewModel';
 import styles from './AddProgramDialog.module.css';
+import { Modal } from './Modal';
+import modal from './Modal.module.css';
 import { TimecodeInput } from './TimecodeInput';
 
 type Props = {
@@ -11,13 +13,6 @@ type Props = {
 
 export function AddProgramDialog({ insertAfter, onDone }: Props) {
   const vm = useAddProgramViewModel(insertAfter, onDone);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-
-  // <dialog> nativo in modalità modale: sfondo oscurato, focus confinato, Esc gestito dal browser
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
-  }, []);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -25,21 +20,9 @@ export function AddProgramDialog({ insertAfter, onDone }: Props) {
   };
 
   return (
-    <dialog
-      ref={dialogRef}
-      className={styles.dialog}
-      onCancel={(event) => {
-        event.preventDefault();
-        vm.cancel();
-      }}
-      aria-labelledby="add-program-title"
-    >
+    <Modal title="Aggiungi programma" onCancel={vm.cancel}>
       <form onSubmit={handleSubmit} noValidate>
-        <header className={styles.header}>
-          <h2 id="add-program-title">Aggiungi programma</h2>
-        </header>
-
-        <div className={styles.body}>
+        <div className={modal.body}>
           <label className={styles.field}>
             <span className={styles.label}>Titolo</span>
             <input
@@ -119,21 +102,21 @@ export function AddProgramDialog({ insertAfter, onDone }: Props) {
           </fieldset>
 
           {vm.submitError && (
-            <p className={styles.submitError} role="alert">
+            <p className={modal.error} role="alert">
               {vm.submitError}
             </p>
           )}
         </div>
 
-        <footer className={styles.footer}>
-          <button type="button" className={styles.secondary} onClick={vm.cancel} disabled={vm.saving}>
+        <footer className={modal.footer}>
+          <button type="button" className={modal.secondary} onClick={vm.cancel} disabled={vm.saving}>
             Annulla
           </button>
-          <button type="submit" className={styles.primary} disabled={vm.saving}>
+          <button type="submit" className={modal.primary} disabled={vm.saving}>
             {vm.saving ? 'Aggiunta…' : 'Aggiungi'}
           </button>
         </footer>
       </form>
-    </dialog>
+    </Modal>
   );
 }

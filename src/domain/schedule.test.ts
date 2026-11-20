@@ -112,7 +112,7 @@ describe('computeSchedule: sforamento e paratia', () => {
 
   it("il programma che sfora l'ancora viene segnalato e l'ancora resta al suo orario", () => {
     const { rows } = computeSchedule(overflowing);
-    expect(row(rows, 'quiz').overflow).toEqual({
+    expect(row(rows, 'quiz').overflow).toMatchObject({
       amount: min(2),
       against: { kind: 'anchor', programId: 'tg', title: 'tg' },
     });
@@ -144,7 +144,60 @@ describe('computeSchedule: sforamento e paratia', () => {
 
   it('sforamento della fine della giornata', () => {
     const { rows } = computeSchedule([anchor('notte', at(23, 30), min(45))]);
-    expect(row(rows, 'notte').overflow).toEqual({ amount: min(15), against: { kind: 'endOfDay' } });
+    expect(row(rows, 'notte').overflow).toMatchObject({ amount: min(15), against: { kind: 'endOfDay' } });
+  });
+});
+
+describe('computeSchedule: sforamento che spinge più programmi oltre l\'ancora', () => {
+  // Talk Show allungato di 3 ore: Rubrica, Gioco e Quiz finiscono interamente dopo le 20:00
+  const programs = [
+    anchor('tg12', at(12), min(30)),
+    floating('talk', min(270)), // 12:30 → 17:00
+    floating('rubrica', min(30)), // 17:00 → 17:30
+    floating('attualita', min(160)), // 17:30 → 20:10 (attraversa le 20:00)
+    floating('gioco', min(70)), // 20:10 → 21:20
+    floating('quiz', min(50)), // 21:20 → 22:10
+    anchor('tg20', at(20), min(30)),
+    floating('film', min(120)),
+  ];
+  const { rows, issues } = computeSchedule(programs);
+
+  it("l'ancora riporta lo sforamento complessivo del segmento", () => {
+    expect(row(rows, 'tg20').incomingOverflow).toBe(at(22, 10) - at(20));
+    expect(row(rows, 'tg12').incomingOverflow).toBeNull();
+  });
+
+  it("i programmi che finiscono prima dell'ancora non sono coinvolti", () => {
+    expect(row(rows, 'talk').overflow).toBeNull();
+    expect(row(rows, 'rubrica').overflow).toBeNull();
+  });
+
+  it("il programma che attraversa l'orario dell'ancora sfora di quanto la supera", () => {
+    expect(row(rows, 'attualita').overflow).toMatchObject({ amount: min(10), startsAfterLimit: false, isLast: false });
+  });
+
+  it("i programmi che iniziano dopo l'orario dell'ancora sono segnalati come non realizzabili", () => {
+    expect(row(rows, 'gioco').overflow).toMatchObject({ startsAfterLimit: true, isLast: false });
+    expect(row(rows, 'quiz').overflow).toMatchObject({ startsAfterLimit: true, isLast: true });
+  });
+
+  it('tutti i programmi coinvolti conoscono lo sforamento totale', () => {
+    for (const id of ['attualita', 'gioco', 'quiz']) {
+      expect(row(rows, id).overflow?.total).toBe(min(130));
+    }
+  });
+
+  it("troncare l'ultimo non basta: nessuna proposta", () => {
+    expect(row(rows, 'quiz').truncateTo).toBeNull();
+    expect(row(rows, 'attualita').truncateTo).toBeNull();
+  });
+
+  it('paratia: il segmento dopo l\'ancora non è influenzato', () => {
+    expect(row(rows, 'film')).toMatchObject({ start: at(20, 30), overflow: null });
+  });
+
+  it('il riepilogo conta un solo sforamento (uno per ancora), non le righe coinvolte', () => {
+    expect(issues.overflows).toBe(1);
   });
 });
 
@@ -156,6 +209,7 @@ describe('computeSchedule: Tronca', () => {
       anchor('tg', at(20), min(30)),
     ]);
     expect(row(rows, 'quiz').truncateTo).toBe(min(30));
+    expect(row(rows, 'quiz').overflow).toMatchObject({ isLast: true, startsAfterLimit: false, total: min(2) });
   });
 
   it('non propone il troncamento se lo sforamento supera la durata del programma', () => {

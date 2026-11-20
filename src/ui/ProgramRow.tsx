@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
-import type { OverflowTarget, ProgramRow as ProgramRowData } from '../domain/schedule';
+import { useEffect, useRef, type MouseEvent } from 'react';
+import type { Overflow, OverflowTarget, ProgramRow as ProgramRowData } from '../domain/schedule';
 import { formatTimecode } from '../domain/timecode';
 import { DurationEditor } from './DurationEditor';
 import { formatUpdatedAt, formatUpdatedAtFull } from './formatUpdatedAt';
-import { AlertIcon, LockIcon } from './icons';
+import { AlertIcon, LockIcon, TrashIcon } from './icons';
 import styles from './ScheduleTable.module.css';
 
 type Props = {
@@ -13,12 +13,34 @@ type Props = {
   onSelect: () => void;
   onStartEditing: () => void;
   onStopEditing: () => void;
+  onTruncate: () => void;
+  onDelete: () => void;
 };
 
-const overflowTargetLabel = (target: OverflowTarget) =>
+const targetLabel = (target: OverflowTarget) =>
   target.kind === 'anchor' ? `«${target.title}»` : 'la fine della giornata';
 
-export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditing, onStopEditing }: Props) {
+const overflowLabel = (overflow: Overflow) =>
+  overflow.startsAfterLimit
+    ? `Dopo l'inizio di ${targetLabel(overflow.against)}`
+    : `Sfora ${targetLabel(overflow.against)} di ${formatTimecode(overflow.amount)}`;
+
+/** Esegue l'azione senza attivare anche la selezione della riga */
+const withoutSelecting = (action: () => void) => (event: MouseEvent) => {
+  event.stopPropagation();
+  action();
+};
+
+export function ProgramRow({
+  row,
+  isSelected,
+  isEditing,
+  onSelect,
+  onStartEditing,
+  onStopEditing,
+  onTruncate,
+  onDelete,
+}: Props) {
   const { program, overflow } = row;
   const anchor = program.fixedStartFrames !== null;
   const rowRef = useRef<HTMLTableRowElement>(null);
@@ -31,7 +53,7 @@ export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditin
   const classes = [
     styles.row,
     anchor ? styles.anchor : '',
-    overflow ? styles.overflow : '',
+    overflow || row.incomingOverflow ? styles.overflow : '',
     isSelected ? styles.selected : '',
   ].join(' ');
 
@@ -42,7 +64,12 @@ export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditin
           <span className={styles.lockSlot} title={anchor ? 'Orario fisso' : undefined}>
             {anchor && <LockIcon size={12} />}
           </span>
-          {formatTimecode(row.start)}
+          <span
+            className={overflow?.startsAfterLimit ? styles.impossibleTime : undefined}
+            title={overflow?.startsAfterLimit ? 'Orario non realizzabile' : undefined}
+          >
+            {formatTimecode(row.start)}
+          </span>
         </span>
       </td>
       <td className={styles.time}>
@@ -52,10 +79,7 @@ export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditin
           <button
             type="button"
             className={styles.durationButton}
-            onClick={(event) => {
-              event.stopPropagation();
-              onStartEditing();
-            }}
+            onClick={withoutSelecting(onStartEditing)}
             title="Modifica la durata"
           >
             {formatTimecode(program.durationFrames)}
@@ -66,17 +90,51 @@ export function ProgramRow({ row, isSelected, isEditing, onSelect, onStartEditin
       <td>
         <div className={styles.title}>
           <span className={styles.titleText}>{program.title}</span>
+
+          {row.incomingOverflow !== null && (
+            <span className={`${styles.badge} ${styles.badgeDanger}`}>
+              <AlertIcon size={12} />I programmi precedenti sforano di {formatTimecode(row.incomingOverflow)}
+            </span>
+          )}
+
           {overflow && (
             <span className={`${styles.badge} ${styles.badgeDanger}`}>
               <AlertIcon size={12} />
-              Sfora {overflowTargetLabel(overflow.against)} di {formatTimecode(overflow.amount)}
+              {overflowLabel(overflow)}
             </span>
+          )}
+
+          {overflow?.isLast && (
+            <button
+              type="button"
+              className={styles.truncateButton}
+              disabled={row.truncateTo === null}
+              title={
+                row.truncateTo === null
+                  ? `Sforamento totale di ${formatTimecode(overflow.total)}: troncare questo programma non basta, accorcia o elimina anche altri programmi`
+                  : `Riduci la durata a ${formatTimecode(row.truncateTo)}`
+              }
+              onClick={withoutSelecting(onTruncate)}
+            >
+              Tronca
+            </button>
           )}
         </div>
       </td>
       <td className={styles.author}>{program.updatedBy}</td>
       <td className={`${styles.time} ${styles.author}`} title={formatUpdatedAtFull(program.updatedAt)}>
         {formatUpdatedAt(program.updatedAt)}
+      </td>
+      <td className={styles.actions}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          onClick={withoutSelecting(onDelete)}
+          title={`Elimina «${program.title}»`}
+          aria-label={`Elimina ${program.title}`}
+        >
+          <TrashIcon />
+        </button>
       </td>
     </tr>
   );

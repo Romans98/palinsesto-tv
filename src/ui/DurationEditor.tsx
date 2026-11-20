@@ -1,6 +1,7 @@
 import { formatTimecode } from '../domain/timecode';
 import type { Program } from '../domain/types';
 import { useEditDurationViewModel } from '../hooks/useEditDurationViewModel';
+import { ConflictDialog } from './ConflictDialog';
 import styles from './DurationEditor.module.css';
 import { TimecodeInput } from './TimecodeInput';
 
@@ -17,6 +18,23 @@ export function DurationEditor({ program, onClose }: Props) {
     if (document.hasFocus()) vm.focusLost();
   };
 
+  const message = (() => {
+    if (vm.status === 'saving' && !vm.conflict) return <span className={styles.hint}>Salvataggio…</span>;
+    if (vm.status !== 'editing') return null;
+    if (vm.error !== null) return <span className={styles.error}>{vm.error}</span>;
+    if (vm.remoteChange) {
+      return (
+        <span className={styles.notice} role="status">
+          <strong>{vm.remoteChange.by}</strong> ha appena cambiato la durata in{' '}
+          <strong>{formatTimecode(vm.remoteChange.newDuration)}</strong>.
+          <br />
+          Se salvi ti verrà chiesto quale valore tenere.
+        </span>
+      );
+    }
+    return <span className={styles.hint}>Invio salva · Esc annulla</span>;
+  })();
+
   return (
     <div className={styles.editor}>
       <TimecodeInput
@@ -29,25 +47,16 @@ export function DurationEditor({ program, onClose }: Props) {
         invalid={vm.error !== null}
         disabled={vm.status !== 'editing'}
       />
-      {vm.status === 'saving' && <span className={styles.hint}>Salvataggio…</span>}
-      {vm.status === 'editing' && vm.error === null && <span className={styles.hint}>Invio salva · Esc annulla</span>}
-      {vm.error !== null && <span className={styles.error}>{vm.error}</span>}
+      {message}
 
       {vm.conflict && (
-        <div className={styles.conflict} role="alert">
-          <span>
-            {vm.conflict.theirs.updatedBy} l'ha appena cambiata in{' '}
-            <strong>{formatTimecode(vm.conflict.theirs.durationFrames)}</strong>
-          </span>
-          <div className={styles.conflictActions}>
-            <button type="button" className={styles.primary} onClick={vm.keepMine}>
-              Usa la mia ({formatTimecode(vm.conflict.mine)})
-            </button>
-            <button type="button" className={styles.secondary} onClick={vm.keepTheirs}>
-              Tieni la sua
-            </button>
-          </div>
-        </div>
+        <ConflictDialog
+          programTitle={program.title}
+          conflict={vm.conflict}
+          saving={vm.status === 'saving'}
+          onKeepMine={vm.keepMine}
+          onKeepTheirs={vm.keepTheirs}
+        />
       )}
     </div>
   );

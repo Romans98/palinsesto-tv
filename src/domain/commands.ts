@@ -37,6 +37,18 @@ export type AddProgramCommand = {
 
 export type AddResult = { status: 'ok'; program: Program } | { status: 'invalid'; error: string };
 
+export type DeleteProgramCommand = {
+  programId: string;
+  /** Versione del programma che l'utente stava guardando quando ha chiesto l'eliminazione */
+  expectedVersion: number;
+  user: string;
+};
+
+export type DeleteResult =
+  | { status: 'ok' }
+  | { status: 'conflict'; current: Program }
+  | { status: 'notFound' };
+
 export type CommandOutcome<R> = { programs: Program[]; result: R };
 
 /**
@@ -129,6 +141,25 @@ export function applyAddProgram(
   const next = [...programs];
   next.splice(index, 0, program);
   return { programs: next, result: { status: 'ok', program } };
+}
+
+/**
+ * Elimina un programma, con lo stesso controllo di versione della modifica:
+ * non si elimina un programma che qualcun altro ha appena cambiato senza che l'utente lo sappia.
+ */
+export function applyDeleteProgram(
+  programs: readonly Program[],
+  command: DeleteProgramCommand,
+): CommandOutcome<DeleteResult> {
+  const index = programs.findIndex((p) => p.id === command.programId);
+  if (index === -1) {
+    return { programs: [...programs], result: { status: 'notFound' } };
+  }
+  const current = programs[index];
+  if (current.version !== command.expectedVersion) {
+    return { programs: [...programs], result: { status: 'conflict', current } };
+  }
+  return { programs: programs.filter((p) => p.id !== command.programId), result: { status: 'ok' } };
 }
 
 function findOverlappingAnchor(programs: readonly Program[], start: Frames, end: Frames): Program | undefined {

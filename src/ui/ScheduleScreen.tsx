@@ -1,9 +1,11 @@
 import { useScheduleViewModel } from '../hooks/useScheduleViewModel';
 import { AddProgramDialog } from './AddProgramDialog';
+import { DeleteDialog } from './DeleteDialog';
 import { ScheduleHeader } from './ScheduleHeader';
 import styles from './ScheduleScreen.module.css';
 import { ScheduleTable } from './ScheduleTable';
 import { ScheduleToolbar } from './ScheduleToolbar';
+import { TruncateDialog } from './TruncateDialog';
 
 export function ScheduleScreen() {
   const vm = useScheduleViewModel();
@@ -21,10 +23,14 @@ export function ScheduleScreen() {
             onSelect={vm.select}
             onStartEditing={vm.startEditing}
             onStopEditing={vm.stopEditing}
+            onTruncate={vm.startTruncating}
+            onDelete={vm.startDeleting}
           />
         </div>
       </main>
       {vm.isAdding && <AddProgramDialog insertAfter={vm.insertAfter} onDone={vm.finishAdding} />}
+      {vm.truncating && <TruncateDialog liveRow={vm.truncating.row} onClose={vm.finishTruncating} />}
+      {vm.deleting && <DeleteDialog liveRow={vm.deleting.row} onClose={vm.finishDeleting} />}
     </div>
   );
 }

@@ -10,9 +10,20 @@ type Props = {
   onSelect: (programId: string) => void;
   onStartEditing: (programId: string) => void;
   onStopEditing: () => void;
+  onTruncate: (programId: string) => void;
+  onDelete: (programId: string) => void;
 };
 
-export function ScheduleTable({ rows, selectedId, editingId, onSelect, onStartEditing, onStopEditing }: Props) {
+export function ScheduleTable({
+  rows,
+  selectedId,
+  editingId,
+  onSelect,
+  onStartEditing,
+  onStopEditing,
+  onTruncate,
+  onDelete,
+}: Props) {
   return (
     <table className={styles.table}>
       <colgroup>
@@ -22,6 +33,7 @@ export function ScheduleTable({ rows, selectedId, editingId, onSelect, onStartEd
         <col />
         <col className={styles.colAuthor} />
         <col className={styles.colUpdatedAt} />
+        <col className={styles.colActions} />
       </colgroup>
       <thead>
         <tr>
@@ -31,6 +43,7 @@ export function ScheduleTable({ rows, selectedId, editingId, onSelect, onStartEd
           <th>Titolo</th>
           <th>Modificato da</th>
           <th>Modificato alle</th>
+          <th aria-label="Azioni" />
         </tr>
       </thead>
       <tbody>
@@ -46,6 +59,8 @@ export function ScheduleTable({ rows, selectedId, editingId, onSelect, onStartEd
               onSelect={() => onSelect(row.program.id)}
               onStartEditing={() => onStartEditing(row.program.id)}
               onStopEditing={onStopEditing}
+              onTruncate={() => onTruncate(row.program.id)}
+              onDelete={() => onDelete(row.program.id)}
             />
           ),
         )}

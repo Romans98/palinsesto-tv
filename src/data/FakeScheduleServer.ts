@@ -1,8 +1,11 @@
 import {
   applyAddProgram,
+  applyDeleteProgram,
   applyUpdateDuration,
   type AddProgramCommand,
   type AddResult,
+  type DeleteProgramCommand,
+  type DeleteResult,
   type UpdateDurationCommand,
   type UpdateResult,
 } from '../domain/commands';
@@ -80,6 +83,11 @@ export class FakeScheduleServer implements ScheduleRepository {
   async addProgram(command: AddProgramCommand): Promise<AddResult> {
     await this.networkDelay();
     return this.execute((programs) => applyAddProgram(programs, command, this.generateId(), this.now()));
+  }
+
+  async deleteProgram(command: DeleteProgramCommand): Promise<DeleteResult> {
+    await this.networkDelay();
+    return this.execute((programs) => applyDeleteProgram(programs, command));
   }
 
   reset(): void {

@@ -1,7 +1,14 @@
-import type { AddProgramCommand, AddResult, UpdateDurationCommand, UpdateResult } from '../domain/commands';
+import type {
+  AddProgramCommand,
+  AddResult,
+  DeleteProgramCommand,
+  DeleteResult,
+  UpdateDurationCommand,
+  UpdateResult,
+} from '../domain/commands';
 import type { Program } from '../domain/types';
 
-export type { AddProgramCommand, AddResult, UpdateDurationCommand, UpdateResult };
+export type { AddProgramCommand, AddResult, DeleteProgramCommand, DeleteResult, UpdateDurationCommand, UpdateResult };
 
 /**
  * Contratto tra la UI e la sorgente dei dati del palinsesto.
@@ -15,6 +22,7 @@ export interface ScheduleRepository {
   getSnapshot(): readonly Program[];
   updateDuration(command: UpdateDurationCommand): Promise<UpdateResult>;
   addProgram(command: AddProgramCommand): Promise<AddResult>;
+  deleteProgram(command: DeleteProgramCommand): Promise<DeleteResult>;
   /** Ripristina i dati demo */
   reset(): void;
 }
