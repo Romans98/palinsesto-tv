@@ -8,6 +8,9 @@ Schermata in **React + TypeScript** per preparare il palinsesto di un canale TV 
 
 ---
 
+## Demo
+https://github.com/user-attachments/assets/4fd2b726-1b58-4465-9460-7c7d7a28651b
+
 ## Le tre criticità
 
 | Domanda | Risposta |
