@@ -468,6 +468,8 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Rimosse le animazioni sulle righe | La transizione pensata per far sparire l'evidenziazione delle modifiche altrui si applicava a tutte le righe, rallentando selezione e passaggio del mouse |
 | 2026-11-20 | 7. Chiusura del documento | "Cosa ho lasciato per strada" e "Come si può migliorare" riorganizzati per area, con il motivo di ogni scelta e il rimando alle decisioni |
 | 2026-11-20 | 8. README | Pensato per chi apre il repository: le tre domande della traccia con la risposta in breve, funzionalità, avvio, come provare il multiutente, architettura, scelte tecniche, test e limiti. Screenshot in `docs/screenshot.png`. Video demo e deploy rimandati |
+| 2026-11-20 | 8. Video demo registrato dall'app vera | Scartato un video in motion graphics, che avrebbe ricostruito l'interfaccia: meno credibile per un esercizio tecnico. Lo script `scripts/record-demo.mjs` (`npm run demo:record`) pilota Chrome con Playwright (`playwright-core`, usa il Chrome già installato), esegue cinque scene (cascata e sforamento, Tronca, conflitto, modifica remota, eliminazione) e salva `docs/demo.webm` (circa 49 s). Alla pagina aggiunge solo un cursore visibile e le didascalie. Si può rigenerare in un minuto se l'app cambia |
+| 2026-11-20 | Conversione del video in MP4 per GitHub | GitHub non riproduce nel README un video salvato nel repository: l'MP4 va caricato dall'editor web. Script `scripts/convert-demo.mjs` (`npm run demo:mp4`) con `ffmpeg-static`; il WebM intermedio è escluso da git |
 
 ---
 

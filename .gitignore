@@ -12,3 +12,7 @@ dist-ssr/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# File temporanei della registrazione del video demo
+docs/.video-raw/
+docs/demo.webm
