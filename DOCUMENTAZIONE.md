@@ -44,7 +44,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6g. Gestione dei conflitti di modifica concorrente
   - [x] 6h. Feedback visivo quando i dati cambiano
   - [x] 6i. Pannello "Strumenti demo" (utente simulato)
-- [ ] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
+- [x] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
 - [ ] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
 - [ ] **9. Preparazione del colloquio**: punti da raccontare e domande probabili
 
@@ -466,6 +466,7 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | D-016: palinsesto su più giorni | Proposta discussa e approvata prima del codice. Modello invariato (frame continui), righe di separazione per giorno, scelta del giorno per le ancore, dati demo su 2 giorni 24 ore su 24; 109 test |
 | 2026-11-20 | Un secondo clic su una riga selezionata la deseleziona | Valutato e scartato di rendere le righe non cliccabili: la selezione serve all'inserimento dei flottanti e al pannello demo |
 | 2026-11-20 | Rimosse le animazioni sulle righe | La transizione pensata per far sparire l'evidenziazione delle modifiche altrui si applicava a tutte le righe, rallentando selezione e passaggio del mouse |
+| 2026-11-20 | 7. Chiusura del documento | "Cosa ho lasciato per strada" e "Come si può migliorare" riorganizzati per area, con il motivo di ogni scelta e il rimando alle decisioni |
 
 ---
 
@@ -500,22 +501,64 @@ Problemi emersi **provando l'app**, non dai test automatici. Per ognuno: come si
 
 ## 9. Cosa ho lasciato per strada
 
-- **Data di inizio del palinsesto salvata** e regola **"Fine trasmissioni"** per i canali non 24 ore su 24 (D-016).
+Scelte consapevoli per restare nel perimetro di un esercizio. Per ognuna c'è il motivo; i dettagli sono nella decisione indicata.
 
-- **Test dei componenti React** (Testing Library + jsdom): la logica non banale è in funzioni pure già coperte da test; i hook e i componenti sono volutamente sottili. Con più tempo aggiungerei test di interazione sul campo timecode e sul flusso di conflitto.
+### Dominio
 
-- **Modalità automatica dell'utente simulato** (una modifica casuale ogni N secondi): scartata a favore di pulsanti espliciti, per una demo ripetibile.
-- **Transazionalità vera tra le tab**: il `localStorage` non offre un compare-and-set atomico tra processi diversi. La finestra di rischio è minima, ma un backend reale la eliminerebbe.
+- **Riordino dei programmi e modifica di titolo, orario o tipo** (flottante ↔ ancora): la traccia chiede di modificare la durata; aggiungere ed eliminare sono arrivati dalle risposte del cliente e dalle prove. Ogni operazione in più è un comando in più con le sue regole di concorrenza.
+- **Altre risoluzioni dello sforamento** (spostare un flottante dopo l'ancora, trasformare l'ancora in flottante): richiedono proprio il riordino e il cambio di tipo (D-003).
+- **Affollamento pubblicitario reale**: la norma ragiona in percentuale per fascia oraria. Qui c'è una soglia fissa di 12 minuti per blocco, solo come avviso (D-006).
+- **Data di inizio del palinsesto salvata**: il giorno 1 è "oggi", quindi riaprendo la demo un altro giorno le date scorrono (D-016).
+- **Regola "Fine trasmissioni"** per i canali che non trasmettono 24 ore su 24: oggi un vuoto notturno di ore verrebbe segnalato come pubblicità lunga (D-016).
+- **Più canali**: il modello ne gestisce uno solo.
 
-- **Tipo "marcato" per i frame** (branded type, es. `number & { __brand: 'Frames' }`): impedirebbe a compile time di sommare per errore frame e secondi. Per ora `Frames` è un semplice alias di `number`: costa meno e si legge meglio, ma la protezione è solo documentale.
+### Concorrenza e dati
+
+- **Backend reale**: il "server" è simulato nel browser. Il multiutente funziona tra le tab dello stesso browser, non tra visitatori diversi del sito pubblicato (D-010).
+- **Transazionalità vera tra le tab**: il `localStorage` non offre un *compare-and-set* atomico tra processi diversi. La finestra di rischio è minima, ma un backend reale la eliminerebbe (D-010).
+- **Annulla / ripeti e cestino**: un'eliminazione è definitiva (D-014).
+- **Migrazioni dei dati salvati**: quando la forma dei dati cambia si riparte dai dati demo ("Ripristina demo").
+- **Modalità automatica dell'utente simulato** (modifiche casuali ogni N secondi): scartata a favore di pulsanti espliciti, per una demo ripetibile (D-010).
+- **Ritardo di rete simulato**: tolto dall'app perché rallentava la demo; resta solo nei test (D-010).
+
+### Interfaccia
+
+- **Barra temporale** della giornata sopra la tabella (D-011).
+- **Versione mobile / tablet**: lo strumento è pensato per operatori alla scrivania (requisiti non funzionali).
+- **Navigazione completa da tastiera** tra le righe e **verifica di accessibilità**: le basi ci sono (`<dialog>` nativo, etichette ARIA, focus gestito), ma non è stato fatto un controllo sistematico.
+
+### Qualità e strumenti
+
+- **Test dei componenti React** (Testing Library + jsdom) e **test end-to-end** (es. Playwright): la logica non banale è in funzioni pure coperte da oltre 100 test; hook e componenti sono volutamente sottili. Con più tempo aggiungerei test di interazione sul campo timecode e sul flusso di conflitto.
+- **Tipo "marcato" per i frame** (*branded type*, es. `number & { __brand: 'Frames' }`): impedirebbe in compilazione di sommare per errore frame e secondi. Oggi `Frames` è un alias di `number`, quindi la protezione è solo documentale.
+- **Integrazione continua** (es. GitHub Actions che eseguono test, lint e build a ogni push).
 
 ---
 
 ## 10. Come si può migliorare
 
-- Autenticazione e permessi (ruoli diversi: chi può spostare un programma a orario fisso?)
-- Multiutente reale tra dispositivi diversi: un backend in tempo reale (es. Supabase o Firebase Realtime, oppure un'API con WebSocket) che sostituisce `FakeScheduleServer` dietro la stessa interfaccia `ScheduleRepository`
-- **Anteprima nell'editor della durata**: prima di premere Invio, mostrare l'effetto della modifica (es. "farà sforare il TG di 02:54:30:00"). Previene gli sforamenti invece di segnalarli dopo.
-- Barra temporale della giornata sopra la tabella (ancore, pubblicità e sforamenti visibili a colpo d'occhio). _Da fare solo se avanza tempo._
-- Indicatore di presenza ("Utente Test 2 sta modificando…") per prevenire i conflitti invece di limitarsi a risolverli
-- _…altre proposte durante lo sviluppo_
+Proposte per un'evoluzione verso un prodotto reale, in ordine di valore per chi usa lo strumento.
+
+### Per chi lavora sul palinsesto
+
+1. **Prevenire invece di segnalare**: un'**anteprima** nell'editor della durata, prima di premere Invio ("questa modifica fa sforare il TG di 02:54:30:00").
+2. **Indicatore di presenza** ("Utente Test 2 sta modificando «Quiz Show»"): riduce i conflitti invece di limitarsi a risolverli. Con un backend reale si ottiene con poco, inviando il "sto modificando X" sullo stesso canale in tempo reale.
+3. **Storico delle modifiche e annulla**: chi ha cambiato cosa e quando, con la possibilità di tornare indietro. Utile anche per le verifiche a posteriori, frequenti nel broadcast.
+4. **Barra temporale** con ancore, pubblicità e sforamenti visibili a colpo d'occhio, e magari trascinamento per riordinare.
+5. **Calcolo reale dell'affollamento pubblicitario** per fascia oraria, con regole diverse per servizio pubblico ed emittenti private.
+6. **Più canali** e passaggio tra canali.
+7. **Esportazione** del palinsesto verso i sistemi di messa in onda (playout) e verso le guide TV (EPG).
+
+### Architettura
+
+1. **Backend reale in tempo reale**: un'API con WebSocket, oppure servizi come Supabase o Firebase. Sostituisce `FakeScheduleServer` dietro la **stessa interfaccia** `ScheduleRepository`, senza toccare la UI. Le regole di dominio (`domain/commands.ts`) sono già funzioni pure, riutilizzabili lato server.
+2. **Autenticazione e permessi**: utenti reali al posto di "Utente Test N", e ruoli diversi (es. solo un responsabile può modificare o eliminare un programma a orario fisso).
+3. **Registro delle operazioni** (*event log*) lato server: abilita storico, annulla e verifiche, e rende più robusta la sincronizzazione tra client.
+4. **Persistenza con data reale** del palinsesto e migrazioni dei dati versionate.
+5. **Virtualizzazione della tabella**: con settimane di palinsesto le righe diventano migliaia, e conviene disegnare solo quelle visibili.
+
+### Qualità
+
+1. Test dei componenti e test end-to-end sui flussi principali (modifica, conflitto, aggiunta, eliminazione).
+2. Integrazione continua con test, lint e build a ogni pull request, e deploy automatico.
+3. Verifica di accessibilità (navigazione da tastiera, lettori di schermo, contrasti).
