@@ -36,7 +36,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - [ ] **5. GitHub**: repository e primo push
 - [ ] **6. Sviluppo incrementale**, un commit per ogni passo:
   - [x] 6a. Timecode: parse, format e aritmetica, con test
-  - [ ] 6b. Motore di ricalcolo del palinsesto, con test
+  - [x] 6b. Motore di ricalcolo del palinsesto, con test
   - [ ] 6c. Backend simulato con versioni e "altri utenti" fittizi
   - [ ] 6d. Lista dei programmi
   - [ ] 6e. Modifica della durata
@@ -133,6 +133,10 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
      - Non è una nuova operazione di dominio. È una normale modifica della durata con un valore calcolato, e quindi passa dallo stesso blocco ottimistico (D-004).
      - Chiede una **conferma esplicita** con la durata prima e dopo, perché nella realtà troncare un programma significa tagliarne il contenuto.
      - È **disabilitata** quando lo sforamento è più lungo del programma stesso, perché andrebbe sotto il minimo di 1 frame (D-005). In quel caso un tooltip invita ad accorciare anche altri programmi.
+  - **Casi limite decisi in fase di implementazione**:
+    - un'**ancora** che sfora l'ancora successiva è segnalata e troncabile come un flottante: troncarla ne cambia la durata, non l'orario di inizio, che resta fisso. "Tronca" vale quindi per l'ultimo *programma* prima dell'ancora, non solo per l'ultimo flottante;
+    - superare la **fine della giornata** (24:00) è uno sforamento come gli altri;
+    - lo spazio **prima del primo programma** è fuori palinsesto, non pubblicità. Altrimenti un palinsesto che parte alle 06:00 mostrerebbe 6 ore di "pubblicità".
   - *Lasciato per strada*: altre risoluzioni possibili, come cancellare un programma, spostare un flottante dopo l'ancora o trasformare l'ancora in flottante. Richiedono operazioni fuori ambito.
 
 ### D-004: modifiche concorrenti sullo stesso programma
@@ -347,6 +351,7 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Struttura del progetto: Vite (template `react-ts`), React 19, TypeScript con `strict` esplicito, Vitest, oxlint, `netlify.toml`, `git init` | Rimossi i contenuti demo del template. Build, lint e test verificati |
 | 2026-11-20 | Il progetto è stato spostato nella sottocartella `palinsesto-tv/` | I file privati (la traccia) restano fuori dal repository invece di essere solo ignorati |
 | 2026-11-20 | 6a. Timecode (`src/domain/timecode.ts`) con 24 test | Frame interi; `parseTimecode` controlla solo il formato, `validateDuration` applica i limiti di dominio (D-005). Gli errori sono valori di ritorno (`Result`, come in Swift), non eccezioni: un input sbagliato dell'utente è un caso previsto, non un'anomalia |
+| 2026-11-20 | 6b. Motore di ricalcolo `computeSchedule` (`src/domain/schedule.ts`) con 20 test | Funzione pura: riceve i programmi salvati e restituisce righe pronte per la UI (orari, pubblicità, sforamenti, proposta di troncamento) più il riepilogo dei problemi. Casi di test concordati prima di scrivere il codice |
 
 ---
 
