@@ -467,6 +467,7 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Un secondo clic su una riga selezionata la deseleziona | Valutato e scartato di rendere le righe non cliccabili: la selezione serve all'inserimento dei flottanti e al pannello demo |
 | 2026-11-20 | Rimosse le animazioni sulle righe | La transizione pensata per far sparire l'evidenziazione delle modifiche altrui si applicava a tutte le righe, rallentando selezione e passaggio del mouse |
 | 2026-11-20 | 7. Chiusura del documento | "Cosa ho lasciato per strada" e "Come si può migliorare" riorganizzati per area, con il motivo di ogni scelta e il rimando alle decisioni |
+| 2026-11-20 | 8. README | Pensato per chi apre il repository: le tre domande della traccia con la risposta in breve, funzionalità, avvio, come provare il multiutente, architettura, scelte tecniche, test e limiti. Screenshot in `docs/screenshot.png`. Video demo e deploy rimandati |
 
 ---
 
