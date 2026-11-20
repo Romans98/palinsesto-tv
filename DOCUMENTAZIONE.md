@@ -37,7 +37,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - [ ] **6. Sviluppo incrementale**, un commit per ogni passo:
   - [x] 6a. Timecode: parse, format e aritmetica, con test
   - [x] 6b. Motore di ricalcolo del palinsesto, con test
-  - [ ] 6c. Backend simulato con versioni e "altri utenti" fittizi
+  - [x] 6c. Backend simulato con versioni e "altri utenti" fittizi
   - [ ] 6d. Lista dei programmi
   - [ ] 6e. Modifica della durata
   - [ ] 6f. Aggiunta di un programma
@@ -87,7 +87,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 
 - Un solo canale e un solo giorno, dalle 00:00:00:00 alle 24:00:00:00. Nessun programma attraversa la mezzanotte.
 - I dati sono simulati: un finto backend nel browser e alcuni "altri utenti" simulati.
-- Non c'è autenticazione: ogni sessione riceve un nome utente casuale.
+- Non c'è autenticazione: ogni tab riceve un nome utente progressivo ("Utente Test 1", "Utente Test 2", …).
 - La pubblicità **non viene salvata**: si ricava ogni volta dagli orari, così non può diventare incoerente con i programmi. In compenso è **visibile**, come riga dedicata con la sua durata.
 - Fuori ambito: cancellare e riordinare i programmi, più canali o giorni, autenticazione, persistenza reale, annulla/ripeti, versione mobile.
 
@@ -252,6 +252,15 @@ type Program = {
   - il `localStorage` non è transazionale tra le tab. Per una simulazione è accettabile, e il controllo di versione resta in un unico punto (il finto server);
   - su Netlify il sito è statico, quindi **due visitatori diversi non si vedono a vicenda**: il multiutente funziona solo tra le tab dello stesso browser. Va scritto nel README;
   - i dati restano nel browser, quindi serve un pulsante **"Ripristina dati demo"**.
+- **Dettagli concordati**:
+  - ogni tab riceve un nome progressivo **"Utente Test N"**, condiviso tra le tab tramite un contatore nel `localStorage`. Il nome resta nella tab (`sessionStorage`), quindi non cambia ricaricando la pagina;
+  - l'utente simulato agisce **solo quando si premono i pulsanti** del pannello, così la demo è controllabile e ripetibile;
+  - il ritardo di rete simulato è di **0,5 s**, modificabile dal pannello.
+- **Struttura del codice**:
+  - `domain/commands.ts`: le regole dei comandi come funzioni pure (stato + comando → nuovo stato + esito): controllo di versione, validazione, posizione di inserimento, sovrapposizione tra ancore. È la logica che un backend reale eseguirebbe lato server;
+  - `data/FakeScheduleServer.ts`: solo il "trasporto" (storage, ritardo, notifiche). Lo storage e la sorgente delle notifiche esterne sono **iniettati**, quindi nei test si simulano due tab senza browser;
+  - `data/SimulatedUser.ts`: usa lo stesso `ScheduleRepository` di qualunque client, senza scorciatoie. Se lavora su dati non aggiornati riceve anche lui un conflitto.
+- **Il ritardo di rete viene applicato prima di eseguire il comando**: il comando viene valutato sullo stato presente *all'arrivo* al "server", come nella realtà. È proprio questo a far nascere i conflitti durante la demo.
 - **Evoluzione**: un vero backend in tempo reale (vedi "Come si può migliorare").
 
 ### Struttura delle cartelle
@@ -279,7 +288,7 @@ src/
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ 📺 Canale 1 · Palinsesto di venerdì 20/11     Tu sei: ● Utente Blu           │
+│ 📺 Canale 1 · Palinsesto di venerdì 20/11     Tu sei: ● Utente Test 1           │
 │ ⚠ 1 sforamento · ⓘ 1 blocco pubblicitario lungo   [+ Aggiungi] [↺ Demo]     │
 ├──────────────┬──────────────┬──────────────┬─────────────────────────────────┤
 │ INIZIO       │ DURATA       │ FINE         │ TITOLO                          │
@@ -291,10 +300,10 @@ src/
 │  19:30:00:00 │[00:32:00:00] │ 20:02:00:00  │ Quiz Show ⚠ sfora TG1 di        │
 │              │              │              │   00:02:00:00       [Tronca]    │
 │🔒20:00:00:00 │ 00:30:00:00  │ 20:30:00:00  │ TG1                             │
-│  20:30:00:00 │ 00:45:00:00  │ 21:15:00:00  │ Film ●Utente Rosso · adesso     │
+│  20:30:00:00 │ 00:45:00:00  │ 21:15:00:00  │ Film ●Utente Test 2 · adesso     │
 └──────────────┴──────────────┴──────────────┴─────────────────────────────────┘
 ┌ Strumenti demo (richiudibile) ───────────────────────────────────────────────┐
-│ Simula Utente Rosso: [Allunga un programma] [Modifica il programma che sto   │
+│ Simula Utente Test 2: [Allunga un programma] [Modifica il programma che sto   │
 │ modificando] [Aggiungi un programma]   Ritardo di rete: [0,5 s ▾]            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -307,7 +316,7 @@ src/
 | Riga a orario fisso | Icona 🔒, bordo sinistro marcato, inizio in grassetto |
 | Riga pubblicità | Calcolata e non modificabile, stile grigio tratteggiato. Gialla oltre i 12 minuti (D-006) |
 | Sforamento | Riga rossa con la quantità sforata e il pulsante [Tronca], che apre la conferma con la durata prima e dopo (D-003) |
-| Qualcuno modifica un'altra riga | La riga si illumina e sfuma in circa 2 s, con il badge "● Utente Rosso · adesso". Lo scroll non salta mai: righe ad altezza fissa, niente si riordina sotto il cursore |
+| Qualcuno modifica un'altra riga | La riga si illumina e sfuma in circa 2 s, con il badge "● Utente Test 2 · adesso". Lo scroll non salta mai: righe ad altezza fissa, niente si riordina sotto il cursore |
 | Qualcuno modifica la riga che sto modificando io | Il mio campo **non viene toccato**. Compare subito un avviso con il nuovo valore. Se salvo comunque, il server rifiuta la versione non aggiornata e si apre il dialogo di conflitto |
 | Dialogo di conflitto (D-004) | Mostra originale / il mio valore / quello dell'altro utente. Pulsanti: [Usa il mio valore], che riprova sulla versione nuova, e [Tieni il suo] |
 | Aggiungere un programma | Finestra modale con titolo, durata e tipo (flottante dopo la riga selezionata / orario fisso con inizio) |
@@ -352,10 +361,14 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Il progetto è stato spostato nella sottocartella `palinsesto-tv/` | I file privati (la traccia) restano fuori dal repository invece di essere solo ignorati |
 | 2026-11-20 | 6a. Timecode (`src/domain/timecode.ts`) con 24 test | Frame interi; `parseTimecode` controlla solo il formato, `validateDuration` applica i limiti di dominio (D-005). Gli errori sono valori di ritorno (`Result`, come in Swift), non eccezioni: un input sbagliato dell'utente è un caso previsto, non un'anomalia |
 | 2026-11-20 | 6b. Motore di ricalcolo `computeSchedule` (`src/domain/schedule.ts`) con 20 test | Funzione pura: riceve i programmi salvati e restituisce righe pronte per la UI (orari, pubblicità, sforamenti, proposta di troncamento) più il riepilogo dei problemi. Casi di test concordati prima di scrivere il codice |
+| 2026-11-20 | 6c. Backend simulato: `domain/commands.ts`, `data/` (repository, server simulato, utente simulato, identità, dati demo) | 76 test in totale. Utenti chiamati "Utente Test N" su richiesta. Il vincolo `erasableSyntaxOnly` del template vieta le *parameter properties* nei costruttori, quindi i campi sono dichiarati in modo esplicito |
 
 ---
 
 ## 8. Cosa ho lasciato per strada
+
+- **Modalità automatica dell'utente simulato** (una modifica casuale ogni N secondi): scartata a favore di pulsanti espliciti, per una demo ripetibile.
+- **Transazionalità vera tra le tab**: il `localStorage` non offre un compare-and-set atomico tra processi diversi. La finestra di rischio è minima, ma un backend reale la eliminerebbe.
 
 - **Tipo "marcato" per i frame** (branded type, es. `number & { __brand: 'Frames' }`): impedirebbe a compile time di sommare per errore frame e secondi. Per ora `Frames` è un semplice alias di `number`: costa meno e si legge meglio, ma la protezione è solo documentale.
 
@@ -366,5 +379,5 @@ ScheduleScreen                 ← useScheduleViewModel
 - Autenticazione e permessi (ruoli diversi: chi può spostare un programma a orario fisso?)
 - Multiutente reale tra dispositivi diversi: un backend in tempo reale (es. Supabase o Firebase Realtime, oppure un'API con WebSocket) che sostituisce `FakeScheduleServer` dietro la stessa interfaccia `ScheduleRepository`
 - Barra temporale della giornata sopra la tabella (ancore, pubblicità e sforamenti visibili a colpo d'occhio). _Da fare solo se avanza tempo._
-- Indicatore di presenza ("Utente Rosso sta modificando…") per prevenire i conflitti invece di limitarsi a risolverli
+- Indicatore di presenza ("Utente Test 2 sta modificando…") per prevenire i conflitti invece di limitarsi a risolverli
 - _…altre proposte durante lo sviluppo_
