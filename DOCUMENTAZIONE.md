@@ -7,7 +7,7 @@
 
 ## 1. Contesto
 
-Il compito è un esercizio per un colloquio tecnico: una schermata in **React + TypeScript** per chi prepara il palinsesto di un canale TV.
+Il cliente chiede una schermata in **React + TypeScript** per chi prepara il palinsesto di un canale TV.
 
 - Dati: una lista di programmi, ognuno con **titolo**, **orario di inizio** e **durata**.
 - Azioni richieste: **modificare la durata** di un programma e **aggiungere** un programma.
@@ -33,8 +33,8 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - [x] **2. Decisioni di dominio**: le tre situazioni ambigue della traccia, più il timecode
 - [x] **3. Architettura**: stack, livelli, pattern, simulazione del backend multiutente
 - [x] **4. UI**: riferimenti, wireframe, albero dei componenti
-- [ ] **5. GitHub**: repository e primo push
-- [ ] **6. Sviluppo incrementale**, un commit per ogni passo:
+- [x] **5. GitHub**: repository e primo push
+- [x] **6. Sviluppo incrementale**, un commit per ogni passo:
   - [x] 6a. Timecode: parse, format e aritmetica, con test
   - [x] 6b. Motore di ricalcolo del palinsesto, con test
   - [x] 6c. Backend simulato con versioni e "altri utenti" fittizi
@@ -46,7 +46,6 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6i. Pannello "Strumenti demo" (utente simulato)
 - [x] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
 - [x] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
-- [ ] **9. Preparazione del colloquio**: punti da raccontare e domande probabili
 
 ---
 
@@ -82,7 +81,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 - **Calcoli corretti**: il tempo è salvato come numero intero di frame, quindi non ci sono errori di arrotondamento.
 - **Testabilità**: la logica di dominio è scritta come funzioni pure, separate da React.
 - **Backend sostituibile**: un'interfaccia (pattern Repository) separa la UI dalla sorgente dei dati. Oggi i dati sono simulati, domani possono arrivare da un'API REST o da un WebSocket.
-- **Semplicità**: l'esercizio vale circa 2 ore, quindi la chiarezza viene prima della completezza.
+- **Semplicità**: il tempo indicativo è di circa 2 ore, quindi la chiarezza viene prima della completezza.
 - **Target**: solo desktop, perché lo strumento lo usano operatori alla scrivania.
 
 ### 3.4 Ipotesi
@@ -107,9 +106,9 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
 _Ogni decisione segue lo schema: contesto → alternative → scelta → conseguenze._
 
 ### D-001: repository pubblico
-- **Contesto**: i valutatori devono poter vedere codice, documento e video demo senza attriti.
-- **Alternative**: repo privato con invito ai valutatori; repo pubblico.
-- **Scelta**: pubblico. Il file con la traccia originale e i contatti del selezionatore resta **fuori dalla cartella del repository** (il progetto vive nella sottocartella `palinsesto-tv/`), quindi non può essere caricato per errore.
+- **Contesto**: il cliente deve poter vedere codice, documento e video demo senza attriti.
+- **Alternative**: repo privato con inviti; repo pubblico.
+- **Scelta**: pubblico. Il file con la traccia originale e i contatti personali resta **fuori dalla cartella del repository** (il progetto vive nella sottocartella `palinsesto-tv/`), quindi non può essere caricato per errore.
 - **Conseguenze**: basta un link e il progetto resta nel portfolio. Nel repo non devono finire dati personali.
 
 ### D-002: nome del progetto `palinsesto-tv`
@@ -311,7 +310,7 @@ type Program = {
   - `data/SimulatedUser.ts`: usa lo stesso `ScheduleRepository` di qualunque client, senza scorciatoie. Se lavora su dati non aggiornati riceve anche lui un conflitto.
 - **Il ritardo di rete, quando è attivo, viene applicato prima di eseguire il comando**: il comando viene valutato sullo stato presente *all'arrivo* al "server", come nella realtà. Un test lo verifica con un client lento e uno veloce.
 - **Pannello "Strumenti demo"**, richiudibile, in fondo alla pagina e volutamente separato dall'interfaccia "vera" (bordo tratteggiato). L'utente simulato agisce sulla **riga selezionata**: allunga o accorcia di 2 minuti, aggiunge una promo dopo, elimina. Il pannello mostra l'esito dell'ultima azione, conflitti compresi.
-  - **I pulsanti del pannello non rubano il focus**: si può tenere aperta la modifica di una durata e far agire l'utente simulato sullo stesso programma. Così l'avviso immediato e il dialogo di conflitto si mostrano con una sola tab, al colloquio e nel video.
+  - **I pulsanti del pannello non rubano il focus**: si può tenere aperta la modifica di una durata e far agire l'utente simulato sullo stesso programma. Così l'avviso immediato e il dialogo di conflitto si mostrano con una sola tab, in una presentazione dal vivo e nel video.
 - **Evoluzione**: un vero backend in tempo reale (vedi "Come si può migliorare").
 
 ### D-013: dependency injection e ViewModel
@@ -468,9 +467,11 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | Rimosse le animazioni sulle righe | La transizione pensata per far sparire l'evidenziazione delle modifiche altrui si applicava a tutte le righe, rallentando selezione e passaggio del mouse |
 | 2026-11-20 | 7. Chiusura del documento | "Cosa ho lasciato per strada" e "Come si può migliorare" riorganizzati per area, con il motivo di ogni scelta e il rimando alle decisioni |
 | 2026-11-20 | 8. README | Pensato per chi apre il repository: le tre domande della traccia con la risposta in breve, funzionalità, avvio, come provare il multiutente, architettura, scelte tecniche, test e limiti. Screenshot in `docs/screenshot.png`. Video demo e deploy rimandati |
-| 2026-11-20 | 8. Video demo registrato dall'app vera | Scartato un video in motion graphics, che avrebbe ricostruito l'interfaccia: meno credibile per un esercizio tecnico. Lo script `scripts/record-demo.mjs` (`npm run demo:record`) pilota Chrome con Playwright (`playwright-core`, usa il Chrome già installato), esegue cinque scene (cascata e sforamento, Tronca, conflitto, modifica remota, eliminazione) e salva `docs/demo.webm` (circa 49 s). Alla pagina aggiunge solo un cursore visibile e le didascalie. Si può rigenerare in un minuto se l'app cambia |
+| 2026-11-20 | 8. Video demo registrato dall'app vera | Scartato un video in motion graphics, che avrebbe ricostruito l'interfaccia: meno credibile per mostrare come funziona davvero. Lo script `scripts/record-demo.mjs` (`npm run demo:record`) pilota Chrome con Playwright (`playwright-core`, usa il Chrome già installato), esegue cinque scene (cascata e sforamento, Tronca, conflitto, modifica remota, eliminazione) e salva `docs/demo.webm` (circa 49 s). Alla pagina aggiunge solo un cursore visibile e le didascalie. Si può rigenerare in un minuto se l'app cambia |
 | 2026-11-20 | Conversione del video in MP4 per GitHub | GitHub non riproduce nel README un video salvato nel repository: l'MP4 va caricato dall'editor web. Script `scripts/convert-demo.mjs` (`npm run demo:mp4`) con `ffmpeg-static`; il WebM intermedio è escluso da git |
 | 2026-11-21 | 8. Pubblicazione su Netlify | Caricamento manuale della cartella `dist` (Netlify Drop), senza collegare GitHub. Indirizzo nel README: https://chimerical-starship-36e06e.netlify.app. Il `netlify.toml` serve solo per un eventuale collegamento futuro |
+| 2026-11-21 | 9. Sezione "Come ho usato l'IA" | Divisione del lavoro, regole, verifiche e correzioni di rotta |
+| 2026-11-21 | Aggiunta l'ora legale tra le cose lasciate per strada | Emersa rivedendo i limiti del modello |
 
 ---
 
@@ -505,7 +506,7 @@ Problemi emersi **provando l'app**, non dai test automatici. Per ognuno: come si
 
 ## 9. Cosa ho lasciato per strada
 
-Scelte consapevoli per restare nel perimetro di un esercizio. Per ognuna c'è il motivo; i dettagli sono nella decisione indicata.
+Scelte consapevoli per restare nel perimetro richiesto (circa 2 ore, senza complicare). Per ognuna c'è il motivo; i dettagli sono nella decisione indicata.
 
 ### Dominio
 
@@ -514,6 +515,7 @@ Scelte consapevoli per restare nel perimetro di un esercizio. Per ognuna c'è il
 - **Affollamento pubblicitario reale**: la norma ragiona in percentuale per fascia oraria. Qui c'è una soglia fissa di 12 minuti per blocco, solo come avviso (D-006).
 - **Data di inizio del palinsesto salvata**: il giorno 1 è "oggi", quindi riaprendo la demo un altro giorno le date scorrono (D-016).
 - **Regola "Fine trasmissioni"** per i canali che non trasmettono 24 ore su 24: oggi un vuoto notturno di ore verrebbe segnalato come pubblicità lunga (D-016).
+- **Ora legale**: il modello assume giorni sempre di 24 ore (2.160.000 frame). Nei due giorni dell'anno in cui si cambia ora, la giornata dura 23 o 25 ore e gli orari mostrati dopo il cambio sarebbero sfasati di un'ora. La soluzione corretta è ragionare in istanti reali (UTC) e convertire nell'ora locale solo per la visualizzazione (D-016).
 - **Più canali**: il modello ne gestisce uno solo.
 
 ### Concorrenza e dati
@@ -566,3 +568,27 @@ Proposte per un'evoluzione verso un prodotto reale, in ordine di valore per chi 
 1. Test dei componenti e test end-to-end sui flussi principali (modifica, conflitto, aggiunta, eliminazione).
 2. Integrazione continua con test, lint e build a ogni pull request, e deploy automatico.
 3. Verifica di accessibilità (navigazione da tastiera, lettori di schermo, contrasti).
+
+---
+
+## 11. Come ho usato l'IA
+
+La traccia consentiva l'uso dell'IA. L'ho usata (Claude Code) come **collega di coppia**, con regole precise, per concentrare il mio tempo su ragionamento e decisioni.
+
+### Come ho diviso il lavoro
+
+- **Decisioni: mie.** Ogni decisione di questo documento è nata come proposta con alternative e raccomandazione, e l'ho approvata, modificata o respinta prima che venisse scritta una riga di codice. Esempi di decisioni cambiate rispetto alla proposta: la pubblicità mostrata come riga esplicita invece che come semplice vuoto, l'eliminazione dei programmi e il palinsesto su più giorni (aggiunti in corso d'opera), la rimozione del ritardo di rete e delle animazioni.
+- **Regola di lavoro esplicita**: niente codice senza approvazione, nemmeno per correggere un bug. Prima l'analisi della causa e la proposta, poi il codice.
+- **Codice e test: scritti dall'IA, sotto la mia revisione.** Per la logica di dominio i casi di test sono stati concordati *prima* di scrivere il codice.
+- **Verifica: mia, provando l'app.** I quattro problemi della sezione 8 li ho trovati io usandola. Nessuno era coperto dai test automatici, perché riguardavano il comportamento visto dall'utente.
+
+### Dove la mia esperienza ha corretto la rotta
+
+- **Architettura**: ho chiesto di allinearla a MVVM, il pattern con cui lavoro su iOS (UIKit), e di spiegarmi le corrispondenze (D-009). Così posso difendere ogni livello con cognizione di causa.
+- **Interfaccia**: la prima versione aveva l'aspetto tipico delle interfacce generate dall'IA (tema scuro, emoji, effetti). L'ho fatta rifare con le convenzioni dei software gestionali (D-012).
+- **Dominio**: provando l'app ho trovato i casi limite che il modello non gestiva bene (sforamenti grandi, mezzanotte). Ne sono nate le revisioni di D-003 e la decisione D-016.
+
+### Cosa ne ricavo
+
+L'IA accelera molto la scrittura del codice e la stesura dei documenti. Il valore dell'ingegnere resta nel **fare le domande giuste**, nello **scegliere tra le alternative** e nel **verificare il risultato sul campo**. Questo documento è la traccia di quel lavoro.
+
