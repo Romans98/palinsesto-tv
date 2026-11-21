@@ -472,6 +472,7 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-21 | 8. Pubblicazione su Netlify | Caricamento manuale della cartella `dist` (Netlify Drop), senza collegare GitHub. Indirizzo nel README: https://chimerical-starship-36e06e.netlify.app. Il `netlify.toml` serve solo per un eventuale collegamento futuro |
 | 2026-11-21 | 9. Sezione "Come ho usato l'IA" | Divisione del lavoro, regole, verifiche e correzioni di rotta |
 | 2026-11-21 | Aggiunta l'ora legale tra le cose lasciate per strada | Emersa rivedendo i limiti del modello |
+| 2026-11-21 | Icona della pagina: un televisore stilizzato al posto del fulmine predefinito di Vite | SVG disegnato a mano nel blu dell'app (`public/favicon.svg`). Scartati un televisore con un orologio sullo schermo, illeggibile a 16 px, e una griglia, troppo generica |
 
 ---
 
