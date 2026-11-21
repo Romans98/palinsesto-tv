@@ -2,6 +2,8 @@
 
 Schermata in **React + TypeScript** per preparare il palinsesto di un canale TV **in più persone contemporaneamente**: si vedono i programmi con orario di inizio e durata in **timecode a 25 fps**, si modificano le durate, si aggiungono ed eliminano programmi, e le modifiche degli altri arrivano in tempo reale.
 
+**▶ Provala online: [chimerical-starship-36e06e.netlify.app](https://chimerical-starship-36e06e.netlify.app)**. Per vedere il lavoro a più mani apri due tab affiancate oppure usa il pannello "Strumenti demo" (vedi [sotto](#provare-il-lavoro-a-più-mani)).
+
 ![Schermata del palinsesto con un programma che sfora l'orario di un programma a orario fisso](docs/screenshot.png)
 
 > Ragionamenti, alternative valutate e decisioni sono documentati passo per passo in **[DOCUMENTAZIONE.md](DOCUMENTAZIONE.md)**.

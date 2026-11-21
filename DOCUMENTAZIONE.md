@@ -45,7 +45,7 @@ Il compito è un esercizio per un colloquio tecnico: una schermata in **React + 
   - [x] 6h. Feedback visivo quando i dati cambiano
   - [x] 6i. Pannello "Strumenti demo" (utente simulato)
 - [x] **7. Chiusura del documento**: "Cosa ho lasciato per strada" e "Come si può migliorare"
-- [ ] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
+- [x] **8. Consegna**: README, deploy online pubblico su Netlify, video demo nel README
 - [ ] **9. Preparazione del colloquio**: punti da raccontare e domande probabili
 
 ---
@@ -225,7 +225,7 @@ _Ogni decisione segue lo schema: contesto → alternative → scelta → consegu
 | Test | Vitest | Si integra con Vite e ha la stessa API di Jest |
 | Gestione dello stato | Nessuna libreria (niente Redux o Zustand) | Bastano gli strumenti di React (`useSyncExternalStore`, `useMemo`). Una dipendenza in meno da giustificare |
 | Stile | CSS Modules, nessuna libreria di componenti | I componenti sono pochi; i CSS Modules sono CSS normale, limitato al singolo componente |
-| Hosting | Netlify (sito statico) | Deploy automatico a ogni push sul repo GitHub |
+| Hosting | Netlify (sito statico) | Pubblicazione manuale: build in locale e caricamento della cartella `dist` (scelta di non collegare il repository) |
 
 ### D-009: pattern MVVM
 
@@ -470,6 +470,7 @@ ScheduleScreen                 ← useScheduleViewModel
 | 2026-11-20 | 8. README | Pensato per chi apre il repository: le tre domande della traccia con la risposta in breve, funzionalità, avvio, come provare il multiutente, architettura, scelte tecniche, test e limiti. Screenshot in `docs/screenshot.png`. Video demo e deploy rimandati |
 | 2026-11-20 | 8. Video demo registrato dall'app vera | Scartato un video in motion graphics, che avrebbe ricostruito l'interfaccia: meno credibile per un esercizio tecnico. Lo script `scripts/record-demo.mjs` (`npm run demo:record`) pilota Chrome con Playwright (`playwright-core`, usa il Chrome già installato), esegue cinque scene (cascata e sforamento, Tronca, conflitto, modifica remota, eliminazione) e salva `docs/demo.webm` (circa 49 s). Alla pagina aggiunge solo un cursore visibile e le didascalie. Si può rigenerare in un minuto se l'app cambia |
 | 2026-11-20 | Conversione del video in MP4 per GitHub | GitHub non riproduce nel README un video salvato nel repository: l'MP4 va caricato dall'editor web. Script `scripts/convert-demo.mjs` (`npm run demo:mp4`) con `ffmpeg-static`; il WebM intermedio è escluso da git |
+| 2026-11-21 | 8. Pubblicazione su Netlify | Caricamento manuale della cartella `dist` (Netlify Drop), senza collegare GitHub. Indirizzo nel README: https://chimerical-starship-36e06e.netlify.app. Il `netlify.toml` serve solo per un eventuale collegamento futuro |
 
 ---
 
